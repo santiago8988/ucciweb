@@ -1,0 +1,428 @@
+  generator client {
+    provider = "prisma-client-js"
+  }
+
+  datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+  }
+
+  model Organization {
+    id                  String             @id @default(uuid())
+    organizationName    String             @unique @map("organization_name")
+    cuit                String?
+    address             String?
+    email               String?
+    telephone           String?
+    description         String?
+    subscriptionStatus  SubscriptionStatus @default(active) @map("subscription_status")
+    createdAt           DateTime           @default(now()) @map("created_at")
+    updatedAt           DateTime           @updatedAt @map("updated_at")
+    hasConsortiumModule Boolean            @default(false) @map("has_consortium_module")
+    hasPropertiesModule Boolean            @default(true) @map("has_properties_module")
+    agents              Agent[]
+    properties          Property[]
+    suppliers           Supplier[]
+    units               Unit[]
+    users               User[]
+    reimbursements      AdminReimbursement[]
+
+    @@map("organizations")
+  }
+
+  model User {
+    id             String        @id @default(uuid())
+    organizationId String?       @map("organization_id")
+    email          String        @unique
+    username       String?
+    fullName       String?       @map("full_name")
+    role           Role          @default(usuario)
+    avatarUrl      String?       @map("avatar_url")
+    isActive       Boolean       @default(true) @map("is_active")
+    createdAt      DateTime      @default(now()) @map("created_at")
+    updatedAt      DateTime      @updatedAt @map("updated_at")
+    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    // Relaciones de adelantos y reembolsos
+    advances       Payment[]            @relation("UserAdvances")
+    reimbursements AdminReimbursement[] @relation("UserReimbursements")
+
+    @@index([organizationId])
+    @@index([email])
+    @@index([role])
+    @@map("users")
+  }
+
+  model Agent {
+    id             String       @id @default(uuid())
+    organizationId String       @map("organization_id")
+    fullName       String       @map("full_name")
+    email          String?
+    phone          String?
+    mobilePhone    String?      @map("mobile_phone")
+    licenseNumber  String?      @map("license_number")
+    avatarUrl      String?      @map("avatar_url")
+    bio            String?
+    isActive       Boolean      @default(true) @map("is_active")
+    createdAt      DateTime     @default(now()) @map("created_at")
+    updatedAt      DateTime     @updatedAt @map("updated_at")
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    properties     Property[]
+
+    @@index([organizationId])
+    @@map("agents")
+  }
+
+  model Property {
+    id             String          @id @default(uuid())
+    organizationId String          @map("organization_id")
+    internalCode   String?         @map("internal_code")
+    title          String
+    description    String?
+    propertyType   PropertyType    @map("property_type")
+    operationType  OperationType   @map("operation_type")
+    salePrice      Decimal?        @map("sale_price") @db.Decimal(15, 2)
+    rentPrice      Decimal?        @map("rent_price") @db.Decimal(15, 2)
+    currency       Currency        @default(ARS)
+    expenses       Decimal?        @db.Decimal(15, 2)
+    address        String
+    streetNumber   String?         @map("street_number")
+    floor          String?
+    apartment      String?
+    locality       String
+    province       String
+    postalCode     String?         @map("postal_code")
+    country        String          @default("Argentina")
+    latitude       Decimal?        @db.Decimal(10, 8)
+    longitude      Decimal?        @db.Decimal(11, 8)
+    totalSurface   Decimal?        @map("total_surface") @db.Decimal(10, 2)
+    coveredSurface Decimal?        @map("covered_surface") @db.Decimal(10, 2)
+    rooms          Int?
+    bedrooms       Int?
+    bathrooms      Int?
+    halfBathrooms  Int?            @map("half_bathrooms")
+    parkingSpaces  Int?            @map("parking_spaces")
+    age            Int?
+    status         PropertyStatus  @default(disponible)
+    isPublished    Boolean         @default(false) @map("is_published")
+    featured       Boolean         @default(false)
+    amenities      Json?
+    heatingType    String?         @map("heating_type")
+    orientation    Orientation?
+    agentId        String?         @map("agent_id")
+    createdAt      DateTime        @default(now()) @map("created_at")
+    updatedAt      DateTime        @updatedAt @map("updated_at")
+    publishedAt    DateTime?       @map("published_at")
+    neighborhood   String?
+    services       Json?
+    agent          Agent?          @relation(fields: [agentId], references: [id])
+    organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    images         PropertyImage[]
+    videos         PropertyVideo[]
+
+    @@index([organizationId])
+    @@index([propertyType])
+    @@index([operationType])
+    @@index([status])
+    @@index([locality])
+    @@index([province])
+    @@index([agentId])
+    @@map("properties")
+  }
+
+  model PropertyImage {
+    id         String   @id @default(uuid())
+    propertyId String   @map("property_id")
+    imageUrl   String   @map("image_url")
+    order      Int      @default(0)
+    isMain     Boolean  @default(false) @map("is_main")
+    createdAt  DateTime @default(now()) @map("created_at")
+    property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+    @@index([propertyId])
+    @@map("property_images")
+  }
+
+  model PropertyVideo {
+    id         String   @id @default(uuid())
+    propertyId String   @map("property_id")
+    videoUrl   String   @map("video_url")
+    title      String?
+    order      Int      @default(0)
+    createdAt  DateTime @default(now()) @map("created_at")
+    property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+    @@index([propertyId])
+    @@map("property_videos")
+  }
+
+  model Unit {
+    id             String    @id @default(uuid())
+    organizationId String    @map("organization_id")
+    unitName       String    @map("unit_name")
+    address        String
+    area           Decimal   @db.Decimal(10, 2)
+    floorsCount    Int       @map("floors_count")
+    createdAt      DateTime  @default(now()) @map("created_at")
+    updatedAt      DateTime  @updatedAt @map("updated_at")
+    bills          Bill[]
+    expenses       Expense[]
+    payments       Payment[]
+    subunits       Subunit[]
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    @@index([organizationId])
+    @@map("units")
+  }
+
+  model Subunit {
+    id                  String    @id @default(uuid())
+    unitId              String    @map("unit_id")
+    floor               Int
+    unitNumber          String    @map("unit_number")
+    holder              String
+    holderEmail         String?   @map("holder_email")
+    holderPhone         String?   @map("holder_phone")
+    area                Decimal   @db.Decimal(10, 2)
+    ownershipPercentage Decimal   @map("ownership_percentage") @db.Decimal(5, 2)
+    createdAt           DateTime  @default(now()) @map("created_at")
+    updatedAt           DateTime  @updatedAt @map("updated_at")
+    expenses            Expense[]
+    unit                Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+    @@index([unitId])
+    @@map("subunits")
+  }
+
+  model Supplier {
+    id             String       @id @default(uuid())
+    organizationId String       @map("organization_id")
+    name           String
+    cuit           String?
+    telephone      String?
+    email          String?
+    description    String?
+    createdAt      DateTime     @default(now()) @map("created_at")
+    updatedAt      DateTime     @updatedAt @map("updated_at")
+    bills          Bill[]
+    payments       Payment[]
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    @@index([organizationId])
+    @@map("suppliers")
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FACTURAS/GASTOS DE PROVEEDORES (Bills)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Representa gastos del edificio que pueden o no estar vinculados a un proveedor
+  // Ejemplos:
+  // - CON proveedor: factura de ascensores, limpieza, mantenimiento
+  // - SIN proveedor: luz, gas, agua (gastos directos sin proveedor en el sistema)
+  // ═══════════════════════════════════════════════════════════════════════════
+  model Bill {
+    id             String         @id @default(uuid())
+    unitId         String         @map("unit_id")
+    supplierId     String?        @map("supplier_id")  // OPCIONAL - permite gastos sin proveedor
+    category       String                              // "Electricidad", "Ascensores", "Limpieza", etc.
+    billNumber     String?        @map("bill_number")  // Número de factura si existe
+    amount         Decimal        @db.Decimal(15, 2)
+    description    String?
+    billDate       DateTime       @map("bill_date")    // Fecha de emisión de la factura
+    dueDate        DateTime?      @map("due_date")     // Fecha de vencimiento
+    periodMonth    Int            @map("period_month") // Mes al que corresponde el gasto
+    periodYear     Int            @map("period_year")  // Año al que corresponde el gasto
+    isPaid         Boolean        @default(false) @map("is_paid")
+    createdAt      DateTime       @default(now()) @map("created_at")
+
+    unit           Unit           @relation(fields: [unitId], references: [id], onDelete: Cascade)
+    supplier       Supplier?      @relation(fields: [supplierId], references: [id])
+    expenseDetails ExpenseDetail[] // Referencia desde detalles de expensa
+
+    @@index([unitId])
+    @@index([supplierId])
+    @@index([periodMonth, periodYear])
+    @@index([billDate])
+    @@map("bills")
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PAGOS A PROVEEDORES (Payments)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Representa pagos realizados a proveedores
+  // Estado de cuenta proveedor: suma(Bills) - suma(Payments)
+  // Permite registrar si el admin adelantó dinero de su bolsillo
+  // ═══════════════════════════════════════════════════════════════════════════
+  model Payment {
+    id               String        @id @default(uuid())
+    supplierId       String        @map("supplier_id")
+    unitId           String?       @map("unit_id")
+    amount           Decimal       @db.Decimal(15, 2)
+    paymentDate      DateTime      @map("payment_date")
+    paymentMethod    String?       @map("payment_method") // "efectivo", "transferencia", "cheque"
+    description      String?
+
+    // Fuente del dinero: consorcio (fondos recaudados) o adelanto del admin
+    fundingSource    FundingSource @default(consorcio) @map("funding_source")
+
+    // Si es adelanto del admin, quién lo hizo
+    advancedByUserId String?       @map("advanced_by_user_id")
+    advancedByUser   User?         @relation("UserAdvances", fields: [advancedByUserId], references: [id])
+
+    // Control de reembolso al admin
+    isReimbursed     Boolean       @default(false) @map("is_reimbursed")
+    reimbursedAt     DateTime?     @map("reimbursed_at")
+
+    createdAt        DateTime      @default(now()) @map("created_at")
+
+    supplier         Supplier      @relation(fields: [supplierId], references: [id])
+    unit             Unit?         @relation(fields: [unitId], references: [id])
+
+    @@index([supplierId])
+    @@index([unitId])
+    @@index([paymentDate])
+    @@index([fundingSource])
+    @@index([advancedByUserId])
+    @@map("payments")
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REEMBOLSOS AL ADMINISTRADOR (AdminReimbursements)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Cuando el consorcio devuelve al admin el dinero que adelantó
+  // ═══════════════════════════════════════════════════════════════════════════
+  model AdminReimbursement {
+    id                String       @id @default(uuid())
+    organizationId    String       @map("organization_id")
+    userId            String       @map("user_id")
+    amount            Decimal      @db.Decimal(15, 2)
+    description       String?
+    reimbursementDate DateTime     @map("reimbursement_date")
+    createdAt         DateTime     @default(now()) @map("created_at")
+
+    organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    user              User         @relation("UserReimbursements", fields: [userId], references: [id])
+
+    @@index([organizationId])
+    @@index([userId])
+    @@index([reimbursementDate])
+    @@map("admin_reimbursements")
+  }
+
+  enum FundingSource {
+    consorcio        // Pagado con fondos del consorcio (expensas cobradas)
+    adelanto_admin   // El administrador puso de su bolsillo
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LIQUIDACIÓN DE EXPENSAS A UNIDADES FUNCIONALES (Expenses)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Representa la liquidación mensual de expensas a cada departamento/unidad funcional
+  // Se genera a partir de las Bills del período, distribuyendo según % de propiedad
+  // ═══════════════════════════════════════════════════════════════════════════
+  model Expense {
+    id                    String          @id @default(uuid())
+    unitId                String          @map("unit_id")
+    subunitId             String          @map("subunit_id")
+    periodMonth           Int             @map("period_month")
+    periodYear            Int             @map("period_year")
+    totalBuildingExpenses Decimal         @map("total_building_expenses") @db.Decimal(15, 2)
+    subunitAmount         Decimal         @map("subunit_amount") @db.Decimal(15, 2)
+    ownershipPercentage   Decimal         @map("ownership_percentage") @db.Decimal(5, 2)
+    title                 String
+    description           String?
+    status                ExpenseStatus   @default(pendiente)
+    dueDate               DateTime        @map("due_date")
+    paidDate              DateTime?       @map("paid_date")
+    paymentType           String?         @map("payment_type")       // "total" | "parcial"
+    paidAmount            Decimal?        @map("paid_amount") @db.Decimal(15, 2)
+    paymentMethod         String?         @map("payment_method")     // "efectivo" | "transferencia"
+    previousPeriodDebt    Decimal?        @default(0) @map("previous_period_debt") @db.Decimal(15, 2)
+    createdAt             DateTime        @default(now()) @map("created_at")
+
+    unit                  Unit            @relation(fields: [unitId], references: [id], onDelete: Cascade)
+    subunit               Subunit         @relation(fields: [subunitId], references: [id], onDelete: Cascade)
+    expenseDetails        ExpenseDetail[]
+
+    @@index([unitId])
+    @@index([subunitId])
+    @@index([periodMonth, periodYear])
+    @@index([status])
+    @@map("expenses")
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DESGLOSE DE EXPENSAS (ExpenseDetails)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Detalle de cada rubro que compone la expensa de una unidad funcional
+  // Vincula cada item con la factura original (Bill) para trazabilidad
+  // ═══════════════════════════════════════════════════════════════════════════
+  model ExpenseDetail {
+    id          String   @id @default(uuid())
+    expenseId   String   @map("expense_id")
+    billId      String?  @map("bill_id")       // Referencia a la factura original
+    category    String                         // "Electricidad", "Agua", "Limpieza", etc.
+    amount      Decimal  @db.Decimal(15, 2)   // Monto prorrateado para este depto
+    description String?
+
+    expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+    bill        Bill?    @relation(fields: [billId], references: [id])
+
+    @@index([expenseId])
+    @@index([billId])
+    @@map("expense_details")
+  }
+
+  enum Role {
+    admin_global
+    admin_organizacion
+    usuario
+  }
+
+  enum SubscriptionStatus {
+    active
+    inactive
+    suspended
+  }
+
+  enum PropertyType {
+    casa
+    departamento
+    terreno
+    local_comercial
+    oficina
+    cochera
+    galpon
+  }
+
+  enum OperationType {
+    venta
+    alquiler
+    venta_alquiler
+  }
+
+  enum Currency {
+    ARS
+    USD
+  }
+
+  enum PropertyStatus {
+    disponible
+    reservada
+    vendida
+    alquilada
+    en_construccion
+  }
+
+  enum Orientation {
+    norte
+    sur
+    este
+    oeste
+  }
+
+  enum ExpenseStatus {
+    pendiente
+    pagado
+    vencido
+  }

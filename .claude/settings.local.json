@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx:*)",
+      "Bash(yes \"\")",
+      "Bash(cp -r /c/Users/santi/Desktop/ucci-web/* /c/Users/santi/Desktop/UcciWeb/)",
+      "Bash(cp /c/Users/santi/Desktop/ucci-web/.eslintrc* /c/Users/santi/Desktop/UcciWeb/)",
+      "Bash(cp /c/Users/santi/Desktop/ucci-web/.gitignore /c/Users/santi/Desktop/UcciWeb/)",
+      "Bash(cp /c/Users/santi/Desktop/ucci-web/tsconfig.json /c/Users/santi/Desktop/UcciWeb/)",
+      "Bash(cp -r /c/Users/santi/Desktop/ucci-web/src /c/Users/santi/Desktop/UcciWeb/)",
+      "Bash(cp /c/Users/santi/Desktop/ucci-web/package.json /c/Users/santi/Desktop/UcciWeb/)",
+      "Bash(cp /c/Users/santi/Desktop/ucci-web/package-lock.json /c/Users/santi/Desktop/UcciWeb/)",
+      "Bash(cp /c/Users/santi/Desktop/ucci-web/postcss.config.mjs /c/Users/santi/Desktop/UcciWeb/)",
+      "Bash(cp /c/Users/santi/Desktop/ucci-web/public/* /c/Users/santi/Desktop/UcciWeb/public/)",
+      "Bash(npm install:*)"
+    ]
+  }
+}
