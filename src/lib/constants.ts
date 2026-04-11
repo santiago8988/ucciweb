@@ -1,5 +1,3 @@
-export const ORGANIZATION_ID = "20b9e211-ca6c-4e37-9b2e-1b70c377b66f";
-
 export const SITE_NAME = "UCCI Propiedades";
 export const SITE_DESCRIPTION =
   "Encontrá tu próximo hogar en Mar del Plata con UCCI Propiedades. Casas, departamentos, terrenos y más en las mejores zonas de la ciudad.";

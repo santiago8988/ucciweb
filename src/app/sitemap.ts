@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
-import { ORGANIZATION_ID, SITE_URL } from "@/lib/constants";
+import { SITE_URL } from "@/lib/constants";
+import { ORGANIZATION_ID } from "@/lib/env";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const properties = await prisma.property.findMany({

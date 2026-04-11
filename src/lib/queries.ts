@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { ORGANIZATION_ID } from "./constants";
+import { ORGANIZATION_ID } from "./env";
 import { PropertyType, OperationType } from "@prisma/client";
 
 export type PropertyFilters = {
