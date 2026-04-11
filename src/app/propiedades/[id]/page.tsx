@@ -29,6 +29,7 @@ import {
   getPropertyPrice,
   HIDDEN_LOCATION_LABEL,
 } from "@/lib/format";
+import { toEmbedUrl } from "@/lib/video";
 
 export const revalidate = 60;
 
@@ -68,6 +69,10 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] || property.propertyType;
   const amenities = (property.amenities as string[] | null) || [];
   const services = (property.services as string[] | null) || [];
+
+  const embeddableVideos = property.videos
+    .map((v) => ({ ...v, embedUrl: toEmbedUrl(v.videoUrl) }))
+    .filter((v): v is typeof v & { embedUrl: string } => Boolean(v.embedUrl));
 
   // Default department: sales if "venta" in operation type, else alquileres
   const defaultDept =
@@ -214,17 +219,23 @@ export default async function PropertyDetailPage({ params }: PageProps) {
             )}
 
             {/* Videos */}
-            {property.videos.length > 0 && (
+            {embeddableVideos.length > 0 && (
               <>
                 <Separator className="my-6" />
                 <h2 className="text-xl font-semibold text-gray-900 mb-3">Videos</h2>
                 <div className="grid gap-4">
-                  {property.videos.map((video) => (
-                    <div key={video.id} className="aspect-video rounded-lg overflow-hidden">
+                  {embeddableVideos.map((video) => (
+                    <div
+                      key={video.id}
+                      className="aspect-video overflow-hidden rounded-xl bg-ink"
+                    >
                       <iframe
-                        src={video.videoUrl}
+                        src={video.embedUrl}
                         title={video.title || "Video de la propiedad"}
                         className="h-full w-full"
+                        loading="lazy"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
                       />
                     </div>
@@ -237,106 +248,117 @@ export default async function PropertyDetailPage({ params }: PageProps) {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-28 space-y-6">
-              {/* Agent card */}
+              {/* Agent card — name + matricula only */}
               {property.agent && (
                 <Card>
                   <CardContent className="p-6">
-                    <h3 className="font-semibold text-gray-900 mb-4">Agente inmobiliario</h3>
-                    <div className="flex items-center gap-3">
+                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-ink/50 mb-4">
+                      Agente inmobiliario
+                    </h3>
+                    <div className="flex items-center gap-4">
                       {property.agent.avatarUrl ? (
                         <Image
                           src={property.agent.avatarUrl}
                           alt={property.agent.fullName}
-                          width={48}
-                          height={48}
-                          className="rounded-full"
+                          width={56}
+                          height={56}
+                          className="h-14 w-14 shrink-0 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-softer text-brand-dark font-bold text-lg">
-                          {property.agent.fullName.charAt(0)}
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-softer text-xl font-bold text-brand-dark">
+                          {property.agent.fullName.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <div>
-                        <p className="font-medium text-gray-900">{property.agent.fullName}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-ink">
+                          {property.agent.fullName}
+                        </p>
                         {property.agent.licenseNumber && (
-                          <p className="text-xs text-gray-500">Mat. {property.agent.licenseNumber}</p>
+                          <p className="mt-0.5 truncate text-xs text-ink/50">
+                            Matrícula {property.agent.licenseNumber}
+                          </p>
                         )}
                       </div>
                     </div>
                     {property.agent.bio && (
-                      <p className="mt-3 text-sm text-gray-500">{property.agent.bio}</p>
+                      <p className="mt-4 text-sm leading-relaxed text-ink/60">
+                        {property.agent.bio}
+                      </p>
                     )}
-                    <div className="mt-4 space-y-2">
-                      {property.agent.phone && (
-                        <a
-                          href={buildTelUrl(property.agent.phone)}
-                          className={cn(
-                            buttonVariants({ variant: "outline" }),
-                            "w-full justify-start"
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Contact CTA — uses agent mobilePhone for both WhatsApp and tel */}
+              {(property.agent?.mobilePhone || waChannel) && (
+                <Card className="bg-brand-soft border-brand/30">
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold text-ink mb-1">
+                      ¿Te interesa esta propiedad?
+                    </h3>
+                    <p className="text-sm text-ink/60 mb-5">
+                      Contactanos para más información o para agendar una visita.
+                    </p>
+                    <div className="space-y-2">
+                      {property.agent?.mobilePhone ? (
+                        <>
+                          <a
+                            href={buildWhatsAppUrl(property.agent.mobilePhone, waMessage)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={cn(
+                              buttonVariants(),
+                              "w-full bg-brand text-ink hover:bg-brand-dark hover:text-white shadow-sm"
+                            )}
+                          >
+                            <MessageCircle className="mr-2 h-4 w-4" />
+                            WhatsApp · {property.agent.mobilePhone}
+                          </a>
+                          <a
+                            href={buildTelUrl(property.agent.mobilePhone)}
+                            className={cn(
+                              buttonVariants({ variant: "outline" }),
+                              "w-full border-ink/15 hover:bg-white"
+                            )}
+                          >
+                            <Phone className="mr-2 h-4 w-4" />
+                            Llamar · {property.agent.mobilePhone}
+                          </a>
+                        </>
+                      ) : (
+                        <>
+                          {waChannel && waChannel.kind === "whatsapp" && (
+                            <a
+                              href={buildWhatsAppUrl(waChannel.waNumber, waMessage)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={cn(
+                                buttonVariants(),
+                                "w-full bg-brand text-ink hover:bg-brand-dark hover:text-white shadow-sm"
+                              )}
+                            >
+                              <MessageCircle className="mr-2 h-4 w-4" />
+                              WhatsApp · {waChannel.display}
+                            </a>
                           )}
-                        >
-                          <Phone className="mr-2 h-4 w-4" />
-                          {property.agent.phone}
-                        </a>
-                      )}
-                      {property.agent.phone && (
-                        <a
-                          href={buildWhatsAppUrl(property.agent.phone, waMessage)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={cn(
-                            buttonVariants({ variant: "outline" }),
-                            "w-full justify-start border-brand/50 bg-brand-soft text-ink hover:bg-brand hover:text-ink"
+                          {telChannel && telChannel.kind === "phone" && (
+                            <a
+                              href={buildTelUrl(telChannel.tel)}
+                              className={cn(
+                                buttonVariants({ variant: "outline" }),
+                                "w-full border-ink/15 hover:bg-white"
+                              )}
+                            >
+                              <Phone className="mr-2 h-4 w-4" />
+                              Llamar · {telChannel.display}
+                            </a>
                           )}
-                        >
-                          <MessageCircle className="mr-2 h-4 w-4" />
-                          WhatsApp
-                        </a>
+                        </>
                       )}
                     </div>
                   </CardContent>
                 </Card>
               )}
-
-              {/* Contact CTA — phone + WhatsApp only, no email form */}
-              <Card className="bg-brand-soft border-brand/30">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-ink mb-1">
-                    ¿Te interesa esta propiedad?
-                  </h3>
-                  <p className="text-sm text-ink/60 mb-5">
-                    Contactanos para más información o para agendar una visita.
-                  </p>
-                  <div className="space-y-2">
-                    {waChannel && waChannel.kind === "whatsapp" && (
-                      <a
-                        href={buildWhatsAppUrl(waChannel.waNumber, waMessage)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(
-                          buttonVariants(),
-                          "w-full bg-brand text-ink hover:bg-brand-dark hover:text-white shadow-sm"
-                        )}
-                      >
-                        <MessageCircle className="mr-2 h-4 w-4" />
-                        WhatsApp · {waChannel.display}
-                      </a>
-                    )}
-                    {telChannel && telChannel.kind === "phone" && (
-                      <a
-                        href={buildTelUrl(telChannel.tel)}
-                        className={cn(
-                          buttonVariants({ variant: "outline" }),
-                          "w-full border-ink/15 hover:bg-white"
-                        )}
-                      >
-                        <Phone className="mr-2 h-4 w-4" />
-                        Llamar · {telChannel.display}
-                      </a>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Map — hidden when hideLocation is true */}
               {!property.hideLocation && property.latitude && property.longitude && (

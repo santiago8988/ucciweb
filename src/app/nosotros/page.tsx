@@ -70,7 +70,7 @@ export default function NosotrosPage() {
           className="object-cover opacity-30"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-gray-900/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/40" />
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl">
