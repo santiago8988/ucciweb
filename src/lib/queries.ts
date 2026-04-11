@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 import { ORGANIZATION_ID } from "./env";
-import { PropertyType, OperationType } from "@prisma/client";
+import { PropertyType, OperationType } from "@/generated/prisma";
 
 export type PropertyFilters = {
   propertyType?: PropertyType;

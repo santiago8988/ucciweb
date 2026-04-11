@@ -5,7 +5,7 @@ import { getProperties, getLocalities } from "@/lib/queries";
 import { PropertyCard } from "@/components/property/property-card";
 import { PropertyFilters } from "@/components/property/property-filters";
 import { Pagination } from "@/components/property/pagination";
-import { PropertyType, OperationType } from "@prisma/client";
+import { PropertyType, OperationType } from "@/generated/prisma";
 
 export const metadata: Metadata = {
   title: "Propiedades",

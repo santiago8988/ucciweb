@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/property/favorite-button";
 import { OPERATION_TYPE_LABELS, PROPERTY_TYPE_LABELS } from "@/lib/constants";
 import { getMainImage, getPropertyPrice, formatSurface } from "@/lib/format";
-import type { Property, PropertyImage, Agent } from "@prisma/client";
+import type { Property, PropertyImage, Agent } from "@/generated/prisma";
 
 type PropertyWithRelations = Property & {
   images: PropertyImage[];
