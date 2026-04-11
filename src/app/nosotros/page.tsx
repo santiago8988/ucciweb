@@ -1,0 +1,207 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { Shield, Users, Award, Target, ArrowRight } from "lucide-react";
+import { buttonVariants } from "@/lib/button-variants";
+import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = {
+  title: "Nosotros",
+  description:
+    "Conocé a UCCI Propiedades. Tu inmobiliaria de confianza en Mar del Plata, Argentina.",
+};
+
+const VALUES = [
+  {
+    icon: Shield,
+    title: "Confianza",
+    description: "Transparencia y honestidad en cada operación inmobiliaria. Trabajamos con integridad para que cada decisión sea segura.",
+  },
+  {
+    icon: Users,
+    title: "Compromiso",
+    description: "Nos involucramos en cada detalle para que logres tus objetivos. Tu satisfacción es nuestra prioridad.",
+  },
+  {
+    icon: Award,
+    title: "Profesionalismo",
+    description: "Equipo capacitado y actualizado en el mercado inmobiliario marplatense, con las herramientas más modernas del sector.",
+  },
+  {
+    icon: Target,
+    title: "Resultados",
+    description: "Orientados a encontrar la mejor solución para cada cliente, optimizando tiempos y maximizando valor.",
+  },
+];
+
+const STATS = [
+  { value: "10+", label: "Años de experiencia" },
+  { value: "100%", label: "Clientes satisfechos" },
+  { value: "24hs", label: "Tiempo de respuesta" },
+];
+
+const GALLERY_IMAGES = [
+  {
+    src: "https://images.unsplash.com/photo-1561816646-b5b12a9b92ed?w=800&q=80",
+    alt: "Costa de Mar del Plata - Vista aérea",
+    className: "col-span-2 row-span-2",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1561815908-bb4926a2f4eb?w=600&q=80",
+    alt: "Skyline de Mar del Plata",
+    className: "",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1561906787-9894a1f78a0c?w=600&q=80",
+    alt: "Atardecer en Mar del Plata",
+    className: "",
+  },
+];
+
+export default function NosotrosPage() {
+  return (
+    <div>
+      {/* Hero with Mar del Plata background */}
+      <section className="relative overflow-hidden bg-ink pt-40 pb-28 md:pt-48 md:pb-36">
+        <Image
+          src="https://images.unsplash.com/photo-1561816544-21ecbffa09a3?w=1920&q=80"
+          alt="Mar del Plata costa"
+          fill
+          className="object-cover opacity-30"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-gray-900/40" />
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-widest text-brand mb-4">
+              Sobre nosotros
+            </p>
+            <h1 className="text-4xl font-light text-white sm:text-5xl lg:text-6xl leading-tight">
+              Tu inmobiliaria en Mar del Plata
+            </h1>
+            <p className="mt-6 text-lg text-gray-300 leading-relaxed max-w-2xl font-light">
+              En UCCI Propiedades conocemos cada rincón de la ciudad feliz.
+              Te acompañamos a encontrar tu hogar ideal o la mejor inversión
+              inmobiliaria en Mar del Plata y alrededores.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats bar */}
+      <section className="bg-white border-b">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-3 divide-x divide-gray-100">
+            {STATS.map((stat) => (
+              <div key={stat.label} className="py-10 text-center">
+                <p className="text-3xl font-semibold text-gray-900 md:text-4xl">{stat.value}</p>
+                <p className="mt-1 text-sm text-gray-500">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Mar del Plata gallery */}
+      <section className="py-24 bg-gray-50/50">
+        <div className="container mx-auto px-4">
+          <div className="mb-14">
+            <p className="text-sm font-semibold uppercase tracking-widest text-brand mb-2">
+              Nuestra ciudad
+            </p>
+            <h2 className="text-3xl font-light text-gray-900 sm:text-4xl">
+              Mar del Plata, la ciudad feliz
+            </h2>
+            <div className="mt-4 h-px bg-gradient-to-r from-brand/40 to-transparent max-w-xs" />
+            <p className="mt-5 text-gray-500 max-w-2xl leading-relaxed">
+              Con sus playas icónicas, su arquitectura única y su calidad de vida incomparable,
+              Mar del Plata es uno de los destinos más buscados para vivir e invertir en Argentina.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[200px] md:auto-rows-[240px]">
+            {GALLERY_IMAGES.map((img) => (
+              <div
+                key={img.alt}
+                className={cn(
+                  "relative overflow-hidden rounded-xl group",
+                  img.className
+                )}
+              >
+                <Image
+                  src={img.src}
+                  alt={img.alt}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <p className="absolute bottom-3 left-4 text-sm font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  {img.alt}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Values */}
+      <section className="py-24">
+        <div className="container mx-auto px-4">
+          <div className="mb-14">
+            <p className="text-sm font-semibold uppercase tracking-widest text-brand mb-2">
+              Lo que nos define
+            </p>
+            <h2 className="text-3xl font-light text-gray-900 sm:text-4xl">
+              Nuestros valores
+            </h2>
+            <div className="mt-4 h-px bg-gradient-to-r from-brand/40 to-transparent max-w-xs" />
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {VALUES.map((value) => (
+              <div
+                key={value.title}
+                className="group rounded-xl border border-gray-100 bg-white p-7 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-softer"
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-brand-soft transition-colors group-hover:bg-brand">
+                  <value.icon className="h-6 w-6 text-brand-dark transition-colors group-hover:text-ink" />
+                </div>
+                <h3 className="text-base font-semibold text-gray-900">{value.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-500">{value.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4 text-center max-w-2xl">
+          <h2 className="text-3xl font-light text-gray-900 sm:text-4xl">
+            ¿Listo para dar el próximo paso?
+          </h2>
+          <p className="mt-4 text-gray-500 leading-relaxed">
+            Ya sea que busques comprar, vender o alquilar en Mar del Plata, estamos acá para ayudarte.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 justify-center sm:flex-row">
+            <Link
+              href="/propiedades"
+              className={cn(buttonVariants({ size: "lg" }), "bg-brand text-ink hover:bg-brand-dark hover:text-white px-8 h-12 font-semibold")}
+            >
+              Explorar propiedades
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+            <Link
+              href="/contacto"
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "px-8 h-12")}
+            >
+              Contactanos
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

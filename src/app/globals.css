@@ -9,6 +9,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --color-brand: #86d1f5;
+  --color-brand-dark: #3fa9d8;
+  --color-brand-light: #b8e4fa;
+  --color-brand-soft: #eaf6fd;
+  --color-brand-softer: #d5ecfa;
+  --color-sand: #e7d7b6;
+  --color-sand-soft: #f4ecd9;
+  --color-stone: #d9d4cc;
+  --color-ink: #1c1c1c;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -122,8 +131,14 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "cv01";
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+  }
+  ::selection {
+    background-color: #86d1f5;
+    color: #1c1c1c;
   }
 }
