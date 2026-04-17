@@ -63,22 +63,7 @@ export function Hero({ propertyCount }: { propertyCount: number }) {
           transition={{ duration: 0.9, ease: "easeOut" }}
           className="text-center mb-12"
         >
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-brand">
-            UCCI · Propiedades en Mar del Plata
-          </p>
-          <h1 className="text-5xl font-light tracking-tight text-white sm:text-6xl md:text-7xl lg:text-8xl">
-            Viví <span className="italic text-brand">Mar del Plata</span>
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-white/70 font-light tracking-wide">
-            {propertyCount > 0 ? (
-              <>
-                <span className="text-white font-normal">{propertyCount}</span> propiedades
-                disponibles en las mejores zonas de la ciudad
-              </>
-            ) : (
-              "Propiedades exclusivas en las mejores zonas de la ciudad"
-            )}
-          </p>
+  
         </motion.div>
 
         {/* Search Card — Compass style with tabs */}
@@ -99,7 +84,7 @@ export function Hero({ propertyCount }: { propertyCount: number }) {
                   "px-8 py-3 text-sm font-semibold tracking-wide uppercase transition-all rounded-t-xl",
                   activeTab === tab.value
                     ? "bg-white text-ink"
-                    : "bg-white/15 text-white/80 hover:bg-white/25"
+                    : "bg-white/15 text-white/80 hover:bg-white/25 active:bg-white/30"
                 )}
               >
                 {tab.label}
@@ -149,7 +134,7 @@ export function Hero({ propertyCount }: { propertyCount: number }) {
 
               <Button
                 onClick={handleSearch}
-                className="bg-brand text-ink hover:bg-brand-dark hover:text-white h-12 px-8 text-base font-semibold"
+                className="bg-brand text-black hover:bg-brand-dark hover:text-white active:scale-95 h-12 px-8 text-base font-semibold"
               >
                 <Search className="mr-2 h-4 w-4" />
                 Buscar
@@ -166,13 +151,14 @@ export function Hero({ propertyCount }: { propertyCount: number }) {
           className="mx-auto mt-16 flex max-w-2xl items-center justify-center gap-8 md:gap-16"
         >
           {[
+            { value: "+60", label: "Años de experiencia" },
             { value: "100%", label: "Propiedades verificadas" },
             { value: "24hs", label: "Respuesta garantizada" },
-            { value: "10+", label: "Años de experiencia" },
+          
           ].map((stat) => (
             <div key={stat.label} className="text-center">
               <p className="text-2xl font-semibold text-white md:text-3xl">{stat.value}</p>
-              <p className="mt-1 text-xs text-white/50 uppercase tracking-wider">{stat.label}</p>
+              <p className="mt-1 text-xs  text-white uppercase tracking-wider">{stat.label}</p>
             </div>
           ))}
         </motion.div>

@@ -39,7 +39,7 @@ export function Pagination({
           variant={page === currentPage ? "default" : "outline"}
           size="icon"
           onClick={() => goToPage(page)}
-          className={page === currentPage ? "bg-brand text-ink hover:bg-brand-dark hover:text-white" : ""}
+          className={page === currentPage ? "bg-brand text-black hover:bg-brand-dark hover:text-white" : ""}
         >
           {page}
         </Button>

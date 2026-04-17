@@ -6,7 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Menu,
-  Phone,
   Heart,
   Home,
   Building2,
@@ -17,7 +16,6 @@ import {
   Facebook,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { buttonVariants } from "@/lib/button-variants";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useFavorites } from "@/lib/favorites";
@@ -69,21 +67,17 @@ export function Header() {
     >
       <div className="container mx-auto flex items-center justify-between px-4 py-2.5">
         <Link href="/" className="flex items-center gap-3" aria-label="UCCI Propiedades">
-          <span
+          <Image
+            src="/logo-ucci.svg"
+            alt="UCCI Propiedades"
+            width={220}
+            height={95}
             className={cn(
-              "grid place-items-center rounded-2xl transition-colors",
-              isTransparent ? "bg-white/95 px-3 py-2" : "bg-brand px-3 py-2"
+              "h-12 w-auto md:h-14 transition-[filter] duration-300",
+              isTransparent ? "filter-[brightness(0)_invert(1)]" : "filter-[brightness(0)]"
             )}
-          >
-            <Image
-              src="/logo-ucci.svg"
-              alt="UCCI Propiedades"
-              width={220}
-              height={95}
-              className="h-12 w-auto md:h-14"
-              priority
-            />
-          </span>
+            priority
+          />
         </Link>
 
         {/* Desktop Nav */}
@@ -113,10 +107,10 @@ export function Header() {
             href="/favoritos"
             aria-label="Favoritos"
             className={cn(
-              "relative grid h-10 w-10 place-items-center rounded-full transition-colors",
+              "relative grid h-10 w-10 place-items-center rounded-full transition-all",
               isTransparent
-                ? "bg-white/10 text-white hover:bg-white/20"
-                : "bg-ink/5 text-ink hover:bg-ink/10",
+                ? "bg-white/10 text-white hover:bg-white/20 active:scale-90"
+                : "bg-ink/5 text-ink hover:bg-ink/10 active:scale-90",
               pathname === "/favoritos" &&
                 (isTransparent ? "bg-white/25" : "bg-brand-soft text-brand-dark")
             )}
@@ -129,19 +123,9 @@ export function Header() {
             />
             {favCount > 0 && (
               <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                {favCount > 99 ? "99+" : favCount}
+                {favCount > 99 ? "+99" : favCount}
               </span>
             )}
-          </Link>
-          <Link
-            href="/contacto"
-            className={cn(
-              buttonVariants({ variant: "default" }),
-              "bg-brand text-ink hover:bg-brand-dark hover:text-white shadow-sm px-5"
-            )}
-          >
-            <Phone className="mr-2 h-4 w-4" />
-            Contacto
           </Link>
         </nav>
 
@@ -149,10 +133,10 @@ export function Header() {
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger
             className={cn(
-              "md:hidden grid h-11 w-11 place-items-center rounded-full transition-colors",
+              "md:hidden grid h-11 w-11 place-items-center rounded-full transition-all",
               isTransparent
-                ? "bg-white/10 text-white hover:bg-white/20"
-                : "bg-ink/5 text-ink hover:bg-ink/10"
+                ? "bg-white/10 text-white hover:bg-white/20 active:scale-90"
+                : "bg-ink/5 text-ink hover:bg-ink/10 active:scale-90"
             )}
             aria-label="Abrir menú"
           >
@@ -172,15 +156,13 @@ export function Header() {
                 className="inline-flex"
                 aria-label="UCCI Propiedades"
               >
-                <span className="rounded-xl bg-brand px-2.5 py-1.5">
-                  <Image
-                    src="/logo-ucci.svg"
-                    alt="UCCI Propiedades"
-                    width={160}
-                    height={68}
-                    className="h-9 w-auto"
-                  />
-                </span>
+                <Image
+                  src="/logo-ucci.svg"
+                  alt="UCCI Propiedades"
+                  width={160}
+                  height={68}
+                  className="h-9 w-auto filter-[brightness(0)_invert(1)]"
+                />
               </Link>
             </div>
 
@@ -199,10 +181,10 @@ export function Header() {
                         href={link.href}
                         onClick={() => setMobileOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl px-3 py-3 text-base font-medium transition-colors",
+                          "flex items-center gap-3 rounded-xl px-3 py-3 text-base font-medium transition-all",
                           active
-                            ? "bg-brand text-ink"
-                            : "text-white/80 hover:bg-white/5 hover:text-white"
+                            ? "bg-brand text-black"
+                            : "text-white/80 hover:bg-white/5 hover:text-white active:bg-white/10"
                         )}
                       >
                         <Icon className="h-5 w-5" />
@@ -221,7 +203,7 @@ export function Header() {
                 className={cn(
                   "flex items-center justify-between gap-3 rounded-xl px-3 py-3 text-base font-medium transition-colors",
                   pathname === "/favoritos"
-                    ? "bg-brand text-ink"
+                    ? "bg-brand text-black"
                     : "text-white/80 hover:bg-white/5 hover:text-white"
                 )}
               >
@@ -264,7 +246,7 @@ export function Header() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
-                  className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/5 text-white/70 transition-colors hover:bg-brand hover:text-ink hover:border-brand"
+                  className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/5 text-white/70 transition-all hover:bg-brand hover:text-black hover:border-brand active:scale-90"
                 >
                   <Instagram className="h-4 w-4" />
                 </a>
@@ -273,7 +255,7 @@ export function Header() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook"
-                  className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/5 text-white/70 transition-colors hover:bg-brand hover:text-ink hover:border-brand"
+                  className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/5 text-white/70 transition-all hover:bg-brand hover:text-black hover:border-brand active:scale-90"
                 >
                   <Facebook className="h-4 w-4" />
                 </a>

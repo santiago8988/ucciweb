@@ -6,8 +6,6 @@ import {
   Phone,
   Clock,
   Mail,
-  Instagram,
-  Facebook,
   MessageCircle,
   ArrowUpRight,
 } from "lucide-react";
@@ -39,11 +37,8 @@ export default function ContactoPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/40" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-widest text-brand mb-4">
-              Contacto
-            </p>
             <h1 className="text-4xl font-light text-white sm:text-5xl lg:text-6xl">
-              Hablemos
+              Contactanos
             </h1>
             <p className="mt-5 text-lg text-white/70 font-light max-w-xl">
               Estamos a un llamado o WhatsApp de distancia. Escribinos al área que
@@ -68,9 +63,9 @@ export default function ContactoPage() {
             <InfoCard
               icon={Phone}
               title="Teléfono"
-              primary={OFFICE.mainPhone.display}
+              primary="+54 9 223 537-5248"
               secondary="Lunes a viernes, 9 a 18hs"
-              href={buildTelUrl(OFFICE.mainPhone.tel)}
+              href={buildTelUrl("+5492235375248")}
             />
             <InfoCard
               icon={Mail}
@@ -81,7 +76,7 @@ export default function ContactoPage() {
             />
             <InfoCard
               icon={Clock}
-              title="Horario"
+              title="Horario Oficina"
               primary="Lun - Vie · 9 a 18hs"
               secondary="Sábados con cita previa"
             />
@@ -147,7 +142,7 @@ export default function ContactoPage() {
                         )}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group flex items-center gap-3 rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-brand-dark hover:text-white"
+                        className="group flex items-center gap-3 rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-black transition-colors hover:bg-brand-dark hover:text-white"
                       >
                         <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-ink">
                           <MessageCircle className="h-4 w-4" />
@@ -194,16 +189,11 @@ export default function ContactoPage() {
                   <ArrowUpRight className="h-3 w-3" />
                 </a>
               </div>
-
-              <div className="mt-10 flex items-center gap-3">
-                <SocialLink href={OFFICE.instagram} icon={Instagram} label="Instagram" />
-                <SocialLink href={OFFICE.facebook} icon={Facebook} label="Facebook" />
-              </div>
             </div>
 
             <div className="relative min-h-[340px] lg:min-h-full">
               <iframe
-                src="https://maps.google.com/maps?q=Matheu+326+Mar+del+Plata&z=16&output=embed"
+                src="https://maps.google.com/maps?q=UCCI+Propiedades+Mar+del+Plata&z=17&output=embed"
                 className="absolute inset-0 h-full w-full border-0 grayscale-[20%]"
                 loading="lazy"
                 title="Ubicación de UCCI Propiedades"
@@ -255,26 +245,4 @@ function InfoCard({
   }
 
   return <Link href={href}>{body}</Link>;
-}
-
-function SocialLink({
-  href,
-  icon: Icon,
-  label,
-}: {
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      className="grid h-11 w-11 place-items-center rounded-full border border-ink/15 bg-white text-ink transition-all hover:-translate-y-0.5 hover:bg-brand hover:border-brand"
-    >
-      <Icon className="h-4 w-4" />
-    </a>
-  );
 }

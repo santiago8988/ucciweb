@@ -116,7 +116,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
 
             <div className="mt-6">
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <Badge className="bg-brand text-ink">{operationLabel}</Badge>
+                <Badge className="bg-brand text-black">{operationLabel}</Badge>
                 <Badge variant="secondary">{typeLabel}</Badge>
                 {property.internalCode && (
                   <Badge variant="outline">Código: {property.internalCode}</Badge>
@@ -308,7 +308,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                             rel="noopener noreferrer"
                             className={cn(
                               buttonVariants(),
-                              "w-full bg-brand text-ink hover:bg-brand-dark hover:text-white shadow-sm"
+                              "w-full bg-brand text-black hover:bg-brand-dark hover:text-white shadow-sm"
                             )}
                           >
                             <MessageCircle className="mr-2 h-4 w-4" />
@@ -334,7 +334,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                               rel="noopener noreferrer"
                               className={cn(
                                 buttonVariants(),
-                                "w-full bg-brand text-ink hover:bg-brand-dark hover:text-white shadow-sm"
+                                "w-full bg-brand text-black hover:bg-brand-dark hover:text-white shadow-sm"
                               )}
                             >
                               <MessageCircle className="mr-2 h-4 w-4" />

@@ -61,11 +61,21 @@ export function ImageGallery({ images }: { images: GalleryImage[] }) {
             transition={{ duration: 0.3 }}
             className="absolute inset-0"
           >
+            {/* Blurred backdrop — fills the frame so verticals don't leave empty bars */}
+            <Image
+              src={images[currentIndex].imageUrl}
+              alt=""
+              fill
+              aria-hidden
+              className="object-cover scale-110 blur-2xl opacity-60"
+              sizes="(max-width: 1024px) 100vw, 66vw"
+            />
+            {/* Actual image — full photo, no crop */}
             <Image
               src={images[currentIndex].imageUrl}
               alt={`Imagen ${currentIndex + 1}`}
               fill
-              className="object-cover"
+              className="object-contain"
               sizes="(max-width: 1024px) 100vw, 66vw"
               priority
               fetchPriority="high"
@@ -153,7 +163,7 @@ export function ImageGallery({ images }: { images: GalleryImage[] }) {
                   alt={`Imagen ${currentIndex + 1}`}
                   fill
                   className="object-contain"
-                  sizes="100vw"
+                  sizes="(min-width: 1152px) 1152px, 100vw"
                 />
               </motion.div>
             </AnimatePresence>

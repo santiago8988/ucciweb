@@ -81,7 +81,7 @@ export default function FavoritosPage() {
               href="/propiedades"
               className={cn(
                 buttonVariants(),
-                "mt-8 bg-brand text-ink hover:bg-brand-dark hover:text-white"
+                "mt-8 bg-brand text-black hover:bg-brand-dark hover:text-white"
               )}
             >
               Explorar propiedades

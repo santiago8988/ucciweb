@@ -34,7 +34,7 @@ export const OFFICE = {
   mainPhone: { display: "223 451-2205", tel: "+542234512205" },
   instagram: "https://www.instagram.com/uccipropiedades/",
   facebook: "https://www.facebook.com/p/UCCI-propiedades-100063504282280/",
-  mapsUrl: "https://maps.google.com/?q=Matheu+326+Mar+del+Plata",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=UCCI+Propiedades+Mar+del+Plata",
 } as const;
 
 export type ContactChannel =
@@ -51,31 +51,31 @@ export type ContactDepartment = {
 export const CONTACT_DEPARTMENTS: ContactDepartment[] = [
   {
     id: "alquileres",
-    name: "Alquileres",
-    description: "Contratos permanentes, anuales y comerciales.",
+    name: "Alquileres permanentes",
+    description: "Contratos anuales, profesionales y comerciales.",
     channels: [
-      { kind: "phone", display: "223 451-2205", tel: "+542234512205" },
       { kind: "whatsapp", display: "+54 9 223 681 2928", waNumber: "5492236812928" },
       { kind: "whatsapp", display: "+54 9 223 537 5248", waNumber: "5492235375248" },
+      { kind: "phone", display: "223 451-2205", tel: "+542234512205" },
     ],
   },
   {
     id: "temporario",
-    name: "Alquiler temporario",
+    name: "Alquileres temporarios",
     description: "Temporada de verano, fines de semana y estadías breves.",
     channels: [
-      { kind: "phone", display: "223 451-2205", tel: "+542234512205" },
       { kind: "whatsapp", display: "+54 9 223 538 2653", waNumber: "5492235382653" },
+      { kind: "phone", display: "223 451-2205", tel: "+542234512205" },
     ],
   },
   {
     id: "compra-venta",
-    name: "Compra / Venta",
+    name: "Compra / Venta / Tasaciones",
     description: "Operaciones de compraventa, tasaciones y asesoramiento.",
     channels: [
-      { kind: "phone", display: "223 451-2205", tel: "+542234512205" },
       { kind: "whatsapp", display: "+54 9 223 681 2928", waNumber: "5492236812928" },
       { kind: "whatsapp", display: "+54 9 223 537 5248", waNumber: "5492235375248" },
+      { kind: "phone", display: "223 451-2205", tel: "+542234512205" },
     ],
   },
 ];

@@ -43,7 +43,7 @@ export function PropertyCard({
       viewport={{ once: true }}
     >
       <Link href={`/propiedades/${property.id}`} className="group block">
-        <article className="overflow-hidden rounded-xl bg-white shadow-sm border border-gray-100 transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1">
+        <article className="overflow-hidden rounded-xl bg-white shadow-sm border border-gray-100 transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 group-active:scale-[0.98] group-active:shadow-md">
           {/* Image — 3:2 aspect like Engel & Völkers */}
           <div className="relative aspect-[3/2] overflow-hidden">
             <Image
@@ -58,11 +58,11 @@ export function PropertyCard({
 
             {/* Badges — top left */}
             <div className="absolute top-3 left-3 flex gap-2">
-              <Badge className="bg-brand text-ink text-xs font-semibold shadow-md">
+              <Badge className="bg-brand text-black text-xs font-semibold shadow-md">
                 {operationLabel}
               </Badge>
               {property.featured && (
-                <Badge className="bg-amber-500 text-white text-xs font-semibold shadow-md">
+                <Badge className="bg-[#ED1B24] text-white text-xs font-semibold shadow-md">
                   Destacada
                 </Badge>
               )}

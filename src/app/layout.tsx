@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
@@ -11,6 +11,12 @@ const sourceSans = Source_Sans_3({
   display: "swap",
   weight: ["300", "400", "500", "600", "700"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#1c1c1c",
+};
 
 export const metadata: Metadata = {
   title: {

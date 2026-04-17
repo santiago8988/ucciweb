@@ -59,7 +59,7 @@ export function CTASection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 viewport={{ once: true }}
-                className="group relative rounded-xl border border-gray-100 bg-white p-7 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-softer"
+                className="group relative rounded-xl border border-gray-100 bg-white p-7 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-softer active:scale-[0.97]"
               >
                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-brand-soft transition-colors group-hover:bg-brand">
                   <service.icon className="h-6 w-6 text-brand-dark transition-colors group-hover:text-ink" />
@@ -87,27 +87,23 @@ export function CTASection() {
             <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-brand/5" />
 
             <div className="relative z-10 max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-widest text-brand mb-4">
-                Vendé o alquilá con nosotros
-              </p>
               <h2 className="text-3xl font-light text-white sm:text-4xl lg:text-5xl leading-tight">
                 Maximizá el valor de tu propiedad
               </h2>
               <p className="mt-5 text-lg text-white/60 font-light leading-relaxed">
-                Nuestro equipo de profesionales te asesora para lograr la mejor operación.
-                Tasación gratuita y sin compromiso.
+                Conocimiento, experiencia y compromiso es lo que destaca a nuestra familia de profesionales.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/contacto"
-                  className={cn(buttonVariants({ size: "lg" }), "bg-brand text-ink hover:bg-brand-dark hover:text-white px-8 h-12 text-base font-semibold")}
+                  className={cn(buttonVariants({ size: "lg" }), "bg-brand text-black hover:bg-brand-dark hover:text-white active:scale-95 px-8 h-12 text-base font-semibold")}
                 >
                   <Phone className="mr-2 h-4 w-4" />
                   Contactanos
                 </Link>
                 <Link
                   href="/propiedades"
-                  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white px-8 h-12 text-base")}
+                  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white active:scale-95 px-8 h-12 text-base")}
                 >
                   Ver propiedades
                 </Link>
