@@ -9,7 +9,7 @@ import {
   useState,
   useTransition,
 } from "react";
-import { X, Check, Search, ChevronDown } from "lucide-react";
+import { X, Check, Search, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -58,7 +58,7 @@ export function PropertyFilters({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
   // Snapshot values from URL.
   const ops = parseList(searchParams.get(PARAM.op));
@@ -125,8 +125,11 @@ export function PropertyFilters({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between px-1 pb-3">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-ink">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-ink inline-flex items-center gap-2">
           Filtros
+          {isPending && (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-dark" />
+          )}
         </h2>
         {hasAnyFilter && (
           <button

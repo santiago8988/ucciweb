@@ -6,12 +6,10 @@ import { ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/lib/button-variants";
 import { PropertyCard } from "@/components/property/property-card";
 import { cn } from "@/lib/utils";
-import type { Property, PropertyImage, PropertyVideo, Agent } from "@/generated/prisma";
+import type { Property, PropertyImage } from "@/generated/prisma";
 
 type PropertyWithRelations = Property & {
   images: PropertyImage[];
-  videos: PropertyVideo[];
-  agent: Agent | null;
 };
 
 export function FeaturedProperties({ properties }: { properties: PropertyWithRelations[] }) {

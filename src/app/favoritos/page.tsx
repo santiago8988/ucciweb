@@ -8,12 +8,10 @@ import { PropertyCard } from "@/components/property/property-card";
 import { buttonVariants } from "@/lib/button-variants";
 import { cn } from "@/lib/utils";
 import { fetchFavoriteProperties } from "./actions";
-import type { Property, PropertyImage, PropertyVideo, Agent } from "@/generated/prisma";
+import type { Property, PropertyImage } from "@/generated/prisma";
 
 type PropertyWithRelations = Property & {
   images: PropertyImage[];
-  videos: PropertyVideo[];
-  agent: Agent | null;
 };
 
 type LoadState =

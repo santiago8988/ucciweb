@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "./prisma";
 import { ORGANIZATION_ID } from "./env";
 import { PropertyType, OperationType, Currency, Prisma } from "@/generated/prisma";
@@ -32,6 +33,13 @@ const INCLUDE_PROPERTY = {
   agent: true,
 };
 
+const INCLUDE_PROPERTY_LIST = {
+  images: {
+    orderBy: { order: "asc" as const },
+    take: 1,
+  },
+} satisfies Prisma.PropertyInclude;
+
 function serialize<T>(data: T): T {
   return JSON.parse(JSON.stringify(data));
 }
@@ -44,7 +52,7 @@ export async function getFeaturedProperties() {
       status: "disponible",
       featured: true,
     },
-    include: INCLUDE_PROPERTY,
+    include: INCLUDE_PROPERTY_LIST,
     take: 6,
     orderBy: { createdAt: "desc" },
   });
@@ -188,7 +196,7 @@ export async function getProperties(filters: PropertyFilters = {}) {
   const [properties, total] = await Promise.all([
     prisma.property.findMany({
       where,
-      include: INCLUDE_PROPERTY,
+      include: INCLUDE_PROPERTY_LIST,
       skip: (page - 1) * pageSize,
       take: pageSize,
       orderBy: orderByClause,
@@ -216,36 +224,44 @@ export async function getPropertyById(id: string) {
   return result ? serialize(result) : null;
 }
 
-export async function getLocalities() {
-  const result = await prisma.property.findMany({
-    where: {
-      organizationId: ORGANIZATION_ID,
-      isPublished: true,
-      status: "disponible",
-    },
-    select: { locality: true },
-    distinct: ["locality"],
-    orderBy: { locality: "asc" },
-  });
-  return result.map((r) => r.locality);
-}
+export const getLocalities = unstable_cache(
+  async () => {
+    const result = await prisma.property.findMany({
+      where: {
+        organizationId: ORGANIZATION_ID,
+        isPublished: true,
+        status: "disponible",
+      },
+      select: { locality: true },
+      distinct: ["locality"],
+      orderBy: { locality: "asc" },
+    });
+    return result.map((r) => r.locality);
+  },
+  ["localities"],
+  { revalidate: 300, tags: ["properties"] }
+);
 
-export async function getNeighborhoods() {
-  const result = await prisma.property.findMany({
-    where: {
-      organizationId: ORGANIZATION_ID,
-      isPublished: true,
-      status: "disponible",
-      neighborhood: { not: null },
-    },
-    select: { neighborhood: true },
-    distinct: ["neighborhood"],
-    orderBy: { neighborhood: "asc" },
-  });
-  return result
-    .map((r) => r.neighborhood)
-    .filter((n): n is string => Boolean(n));
-}
+export const getNeighborhoods = unstable_cache(
+  async () => {
+    const result = await prisma.property.findMany({
+      where: {
+        organizationId: ORGANIZATION_ID,
+        isPublished: true,
+        status: "disponible",
+        neighborhood: { not: null },
+      },
+      select: { neighborhood: true },
+      distinct: ["neighborhood"],
+      orderBy: { neighborhood: "asc" },
+    });
+    return result
+      .map((r) => r.neighborhood)
+      .filter((n): n is string => Boolean(n));
+  },
+  ["neighborhoods"],
+  { revalidate: 300, tags: ["properties"] }
+);
 
 export async function getPropertiesByIds(ids: string[]) {
   if (ids.length === 0) return [];
@@ -255,7 +271,7 @@ export async function getPropertiesByIds(ids: string[]) {
       organizationId: ORGANIZATION_ID,
       isPublished: true,
     },
-    include: INCLUDE_PROPERTY,
+    include: INCLUDE_PROPERTY_LIST,
   });
   return serialize(result);
 }
