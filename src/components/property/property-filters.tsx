@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useOptimistic,
   useRef,
   useState,
   useTransition,
@@ -60,26 +61,39 @@ export function PropertyFilters({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  // Snapshot values from URL.
-  const ops = parseList(searchParams.get(PARAM.op));
-  const tipos = parseList(searchParams.get(PARAM.tipo));
-  const locs = parseList(searchParams.get(PARAM.loc));
-  const bars = parseList(searchParams.get(PARAM.bar));
-  const currency = searchParams.get(PARAM.mon) || "ARS";
-  const amb = searchParams.get(PARAM.amb);
-  const dorm = searchParams.get(PARAM.dorm);
+  // Optimistic URL query string — updated immediately on click so chips reflect
+  // the new selection before the server finishes re-rendering the list.
+  const urlString = searchParams.toString();
+  const [optimisticString, setOptimisticString] = useOptimistic(
+    urlString,
+    (_: string, next: string) => next
+  );
+  const optimisticParams = useMemo(
+    () => new URLSearchParams(optimisticString),
+    [optimisticString]
+  );
+
+  // Snapshot values from optimistic URL.
+  const ops = parseList(optimisticParams.get(PARAM.op));
+  const tipos = parseList(optimisticParams.get(PARAM.tipo));
+  const locs = parseList(optimisticParams.get(PARAM.loc));
+  const bars = parseList(optimisticParams.get(PARAM.bar));
+  const currency = optimisticParams.get(PARAM.mon) || "ARS";
+  const amb = optimisticParams.get(PARAM.amb);
+  const dorm = optimisticParams.get(PARAM.dorm);
 
   const commit = useCallback(
     (mutate: (params: URLSearchParams) => void) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(optimisticString);
       mutate(params);
       params.delete("page");
       const qs = params.toString();
       startTransition(() => {
+        setOptimisticString(qs);
         router.replace(qs ? `/propiedades?${qs}` : "/propiedades", { scroll: false });
       });
     },
-    [router, searchParams]
+    [router, optimisticString, setOptimisticString]
   );
 
   const toggleMulti = useCallback(
@@ -108,16 +122,17 @@ export function PropertyFilters({
 
   const clearAll = () => {
     startTransition(() => {
+      setOptimisticString("");
       router.replace("/propiedades", { scroll: false });
     });
   };
 
   const hasAnyFilter = useMemo(() => {
     for (const key of Object.values(PARAM)) {
-      if (searchParams.get(key)) return true;
+      if (optimisticParams.get(key)) return true;
     }
     return false;
-  }, [searchParams]);
+  }, [optimisticParams]);
 
   // Visually, when no op is set we show both chips as selected (default = all operations).
   const visibleOps = ops.length === 0 ? OPERATION_OPTIONS.map((o) => o.value) : ops;
