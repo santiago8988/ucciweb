@@ -1,431 +1,890 @@
-  generator client {
-    provider = "prisma-client-js"
-    output   = "../src/generated/prisma"
-  }
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
 
-  datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
-  }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
-  model Organization {
-    id                  String             @id @default(uuid())
-    organizationName    String             @unique @map("organization_name")
-    cuit                String?
-    address             String?
-    email               String?
-    telephone           String?
-    description         String?
-    subscriptionStatus  SubscriptionStatus @default(active) @map("subscription_status")
-    createdAt           DateTime           @default(now()) @map("created_at")
-    updatedAt           DateTime           @updatedAt @map("updated_at")
-    hasConsortiumModule Boolean            @default(false) @map("has_consortium_module")
-    hasPropertiesModule Boolean            @default(true) @map("has_properties_module")
-    agents              Agent[]
-    properties          Property[]
-    suppliers           Supplier[]
-    units               Unit[]
-    users               User[]
-    reimbursements      AdminReimbursement[]
+model Organization {
+  id                            String               @id @default(uuid())
+  organizationName              String               @unique @map("organization_name")
+  cuit                          String?
+  address                       String?
+  email                         String?
+  telephone                     String?
+  description                   String?
+  subscriptionStatus            SubscriptionStatus   @default(active) @map("subscription_status")
+  createdAt                     DateTime             @default(now()) @map("created_at")
+  updatedAt                     DateTime             @updatedAt @map("updated_at")
+  hasConsortiumModule           Boolean              @default(false) @map("has_consortium_module")
+  hasPropertiesModule           Boolean              @default(true) @map("has_properties_module")
+  admin_consortium_name         String?
+  admin_consortium_address      String?
+  admin_consortium_postal_code  String?
+  admin_consortium_city         String?
+  admin_consortium_license      String?
+  admin_consortium_registration String?
+  reimbursements                AdminReimbursement[]
+  agents                        Agent[]
+  audit_logs                    audit_logs[]
+  properties                    Property[]
+  suppliers                     Supplier[]
+  units                         Unit[]
+  users                         User[]
 
-    @@map("organizations")
-  }
+  @@map("organizations")
+}
 
-  model User {
-    id             String        @id @default(uuid())
-    organizationId String?       @map("organization_id")
-    email          String        @unique
-    username       String?
-    fullName       String?       @map("full_name")
-    role           Role          @default(usuario)
-    avatarUrl      String?       @map("avatar_url")
-    isActive       Boolean       @default(true) @map("is_active")
-    createdAt      DateTime      @default(now()) @map("created_at")
-    updatedAt      DateTime      @updatedAt @map("updated_at")
-    organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+model User {
+  id             String               @id @default(uuid())
+  organizationId String?              @map("organization_id")
+  email          String               @unique
+  username       String?
+  fullName       String?              @map("full_name")
+  role           Role                 @default(usuario)
+  avatarUrl      String?              @map("avatar_url")
+  isActive       Boolean              @default(true) @map("is_active")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+  subunit_id     String?
+  reimbursements AdminReimbursement[] @relation("UserReimbursements")
+  audit_logs     audit_logs[]
+  bank_imports   bank_imports[]
+  bank_movements bank_movements[]
+  advances       Payment[]            @relation("UserAdvances")
+  periods        periods[]
+  organization   Organization?        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subunits       Subunit?             @relation(fields: [subunit_id], references: [id])
 
-    // Relaciones de adelantos y reembolsos
-    advances       Payment[]            @relation("UserAdvances")
-    reimbursements AdminReimbursement[] @relation("UserReimbursements")
+  @@index([organizationId])
+  @@index([email])
+  @@index([role])
+  @@index([subunit_id])
+  @@map("users")
+}
 
-    @@index([organizationId])
-    @@index([email])
-    @@index([role])
-    @@map("users")
-  }
+model Agent {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  fullName       String       @map("full_name")
+  email          String?
+  phone          String?
+  mobilePhone    String?      @map("mobile_phone")
+  licenseNumber  String?      @map("license_number")
+  avatarUrl      String?      @map("avatar_url")
+  bio            String?
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  deleted_at     DateTime?
+  deleted_by_id  String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  properties     Property[]
 
-  model Agent {
-    id             String       @id @default(uuid())
-    organizationId String       @map("organization_id")
-    fullName       String       @map("full_name")
-    email          String?
-    phone          String?
-    mobilePhone    String?      @map("mobile_phone")
-    licenseNumber  String?      @map("license_number")
-    avatarUrl      String?      @map("avatar_url")
-    bio            String?
-    isActive       Boolean      @default(true) @map("is_active")
-    createdAt      DateTime     @default(now()) @map("created_at")
-    updatedAt      DateTime     @updatedAt @map("updated_at")
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-    properties     Property[]
+  @@index([organizationId])
+  @@index([organizationId, deleted_at])
+  @@map("agents")
+}
 
-    @@index([organizationId])
-    @@map("agents")
-  }
+model Property {
+  id                   String          @id @default(uuid())
+  organizationId       String          @map("organization_id")
+  internalCode         String?         @map("internal_code")
+  title                String
+  description          String?
+  propertyType         PropertyType    @map("property_type")
+  operationType        OperationType   @map("operation_type")
+  salePrice            Decimal?        @map("sale_price") @db.Decimal(15, 2)
+  rentPrice            Decimal?        @map("rent_price") @db.Decimal(15, 2)
+  currency             Currency        @default(ARS)
+  expenses             Decimal?        @db.Decimal(15, 2)
+  address              String
+  streetNumber         String?         @map("street_number")
+  floor                String?
+  apartment            String?
+  locality             String
+  province             String
+  postalCode           String?         @map("postal_code")
+  country              String          @default("Argentina")
+  latitude             Decimal?        @db.Decimal(10, 8)
+  longitude            Decimal?        @db.Decimal(11, 8)
+  sub_type             String?
+  totalSurface         Decimal?        @map("total_surface") @db.Decimal(10, 2)
+  coveredSurface       Decimal?        @map("covered_surface") @db.Decimal(10, 2)
+  semi_covered_surface Decimal?        @db.Decimal(10, 2)
+  rooms                Int?
+  bedrooms             Int?
+  bathrooms            Int?
+  halfBathrooms        Int?            @map("half_bathrooms")
+  parkingSpaces        Int?            @map("parking_spaces")
+  parking_type         String?
+  age                  Int?
+  status               PropertyStatus  @default(disponible)
+  isPublished          Boolean         @default(true) @map("is_published")
+  featured             Boolean         @default(false)
+  hideSalePrice        Boolean         @default(false) @map("hide_sale_price")
+  hideLocation         Boolean         @default(false) @map("hide_location")
+  amenities            Json?
+  heatingType          String?         @map("heating_type")
+  orientation          Orientation?
+  agentId              String?         @map("agent_id")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+  publishedAt          DateTime?       @map("published_at")
+  neighborhood         String?
+  services             Json?
+  agent                Agent?          @relation(fields: [agentId], references: [id])
+  organization         Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  property_cards       property_cards?
+  images               PropertyImage[]
+  videos               PropertyVideo[]
 
-  model Property {
-    id             String          @id @default(uuid())
-    organizationId String          @map("organization_id")
-    internalCode   String?         @map("internal_code")
-    title          String
-    description    String?
-    propertyType   PropertyType    @map("property_type")
-    operationType  OperationType   @map("operation_type")
-    salePrice      Decimal?        @map("sale_price") @db.Decimal(15, 2)
-    rentPrice      Decimal?        @map("rent_price") @db.Decimal(15, 2)
-    currency       Currency        @default(ARS)
-    expenses       Decimal?        @db.Decimal(15, 2)
-    address        String
-    streetNumber   String?         @map("street_number")
-    floor          String?
-    apartment      String?
-    locality       String
-    province       String
-    postalCode     String?         @map("postal_code")
-    country        String          @default("Argentina")
-    latitude       Decimal?        @db.Decimal(10, 8)
-    longitude      Decimal?        @db.Decimal(11, 8)
-    totalSurface   Decimal?        @map("total_surface") @db.Decimal(10, 2)
-    coveredSurface Decimal?        @map("covered_surface") @db.Decimal(10, 2)
-    rooms          Int?
-    bedrooms       Int?
-    bathrooms      Int?
-    halfBathrooms  Int?            @map("half_bathrooms")
-    parkingSpaces  Int?            @map("parking_spaces")
-    age            Int?
-    status         PropertyStatus  @default(disponible)
-    isPublished    Boolean         @default(false) @map("is_published")
-    featured       Boolean         @default(false)
-    hideSalePrice  Boolean         @default(false) @map("hide_sale_price")
-    hideLocation   Boolean         @default(false) @map("hide_location")
-    amenities      Json?
-    heatingType    String?         @map("heating_type")
-    orientation    Orientation?
-    agentId        String?         @map("agent_id")
-    createdAt      DateTime        @default(now()) @map("created_at")
-    updatedAt      DateTime        @updatedAt @map("updated_at")
-    publishedAt    DateTime?       @map("published_at")
-    neighborhood   String?
-    services       Json?
-    agent          Agent?          @relation(fields: [agentId], references: [id])
-    organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-    images         PropertyImage[]
-    videos         PropertyVideo[]
+  @@index([organizationId])
+  @@index([propertyType])
+  @@index([operationType])
+  @@index([status])
+  @@index([locality])
+  @@index([province])
+  @@index([agentId])
+  @@map("properties")
+}
 
-    @@index([organizationId])
-    @@index([propertyType])
-    @@index([operationType])
-    @@index([status])
-    @@index([locality])
-    @@index([province])
-    @@index([agentId])
-    @@map("properties")
-  }
+model PropertyImage {
+  id         String   @id @default(uuid())
+  propertyId String   @map("property_id")
+  imageUrl   String   @map("image_url")
+  order      Int      @default(0)
+  isMain     Boolean  @default(false) @map("is_main")
+  createdAt  DateTime @default(now()) @map("created_at")
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  model PropertyImage {
-    id         String   @id @default(uuid())
-    propertyId String   @map("property_id")
-    imageUrl   String   @map("image_url")
-    order      Int      @default(0)
-    isMain     Boolean  @default(false) @map("is_main")
-    createdAt  DateTime @default(now()) @map("created_at")
-    property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  @@index([propertyId])
+  @@map("property_images")
+}
 
-    @@index([propertyId])
-    @@map("property_images")
-  }
+model PropertyVideo {
+  id         String   @id @default(uuid())
+  propertyId String   @map("property_id")
+  videoUrl   String   @map("video_url")
+  title      String?
+  order      Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  model PropertyVideo {
-    id         String   @id @default(uuid())
-    propertyId String   @map("property_id")
-    videoUrl   String   @map("video_url")
-    title      String?
-    order      Int      @default(0)
-    createdAt  DateTime @default(now()) @map("created_at")
-    property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  @@index([propertyId])
+  @@map("property_videos")
+}
 
-    @@index([propertyId])
-    @@map("property_videos")
-  }
+model Unit {
+  id                        String                      @id @default(uuid())
+  organizationId            String                      @map("organization_id")
+  unitName                  String                      @map("unit_name")
+  address                   String
+  cuit                      String?                     @db.VarChar(11)
+  area                      Decimal                     @db.Decimal(10, 2)
+  floorsCount               Int                         @map("floors_count")
+  bank_holder               String?
+  bank_name                 String?
+  bank_cbu                  String?
+  bank_alias                String?
+  createdAt                 DateTime                    @default(now()) @map("created_at")
+  updatedAt                 DateTime                    @updatedAt @map("updated_at")
+  is_active                 Boolean                     @default(true)
+  anticipations             anticipations[]
+  bank_imports              bank_imports[]
+  bank_movements            bank_movements[]
+  bills                     Bill[]
+  cashboxes                 cashboxes[]
+  expenses                  Expense[]
+  extraordinary_expenses    extraordinary_expenses[]
+  particular_expenses       particular_expenses[]
+  payments                  Payment[]
+  periods                   periods[]
+  refunds                   refunds[]
+  subunits                  Subunit[]
+  supplier_initial_balances supplier_initial_balances[]
+  organization              Organization                @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  model Unit {
-    id             String    @id @default(uuid())
-    organizationId String    @map("organization_id")
-    unitName       String    @map("unit_name")
-    address        String
-    area           Decimal   @db.Decimal(10, 2)
-    floorsCount    Int       @map("floors_count")
-    createdAt      DateTime  @default(now()) @map("created_at")
-    updatedAt      DateTime  @updatedAt @map("updated_at")
-    bills          Bill[]
-    expenses       Expense[]
-    payments       Payment[]
-    subunits       Subunit[]
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@index([organizationId])
+  @@map("units")
+}
 
-    @@index([organizationId])
-    @@map("units")
-  }
+model Subunit {
+  id                           String                       @id @default(uuid())
+  unitId                       String                       @map("unit_id")
+  floor                        String
+  unitNumber                   String                       @map("unit_number")
+  holder                       String
+  holderEmail                  String?                      @map("holder_email")
+  holderPhone                  String?                      @map("holder_phone")
+  holder_address               String?
+  holder_postal_code           String?
+  holder_city                  String?
+  area                         Decimal                      @db.Decimal(10, 2)
+  ownershipPercentage          Decimal                      @map("ownership_percentage") @db.Decimal(5, 2)
+  createdAt                    DateTime                     @default(now()) @map("created_at")
+  updatedAt                    DateTime                     @updatedAt @map("updated_at")
+  functional_unit              String                       @default("")
+  initial_balance              Decimal                      @default(0) @db.Decimal(15, 2)
+  initial_balance_applied_at   DateTime?
+  initial_balance_note         String?
+  initial_balance_period_month Int?
+  initial_balance_period_year  Int?
+  holder_cbu                   String?                      @db.VarChar(22)
+  holder_cuit                  String?                      @db.VarChar(11)
+  deleted_at                   DateTime?
+  deleted_by_id                String?
+  expenses                     Expense[]
+  extraordinary_installments   extraordinary_installments[]
+  particular_expenses          particular_expenses[]
+  unit                         Unit                         @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  users                        User[]
 
-  model Subunit {
-    id                  String    @id @default(uuid())
-    unitId              String    @map("unit_id")
-    floor               Int
-    unitNumber          String    @map("unit_number")
-    holder              String
-    holderEmail         String?   @map("holder_email")
-    holderPhone         String?   @map("holder_phone")
-    area                Decimal   @db.Decimal(10, 2)
-    ownershipPercentage Decimal   @map("ownership_percentage") @db.Decimal(5, 2)
-    createdAt           DateTime  @default(now()) @map("created_at")
-    updatedAt           DateTime  @updatedAt @map("updated_at")
-    expenses            Expense[]
-    unit                Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  @@index([unitId])
+  @@index([unitId, deleted_at])
+  @@map("subunits")
+}
 
-    @@index([unitId])
-    @@map("subunits")
-  }
+model Supplier {
+  id                        String                      @id @default(uuid())
+  organizationId            String                      @map("organization_id")
+  name                      String
+  cuit                      String?
+  telephone                 String?
+  email                     String?
+  description               String?
+  bank_holder               String?
+  bank_name                 String?
+  bank_cbu                  String?
+  bank_alias                String?
+  notes                     String?
+  createdAt                 DateTime                    @default(now()) @map("created_at")
+  updatedAt                 DateTime                    @updatedAt @map("updated_at")
+  initial_balance           Decimal                     @default(0) @db.Decimal(15, 2)
+  initial_balance_note      String?
+  deleted_at                DateTime?
+  deleted_by_id             String?
+  bills                     Bill[]
+  payments                  Payment[]
+  refunds                   refunds[]
+  supplier_initial_balances supplier_initial_balances[]
+  organization              Organization                @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  model Supplier {
-    id             String       @id @default(uuid())
-    organizationId String       @map("organization_id")
-    name           String
-    cuit           String?
-    telephone      String?
-    email          String?
-    description    String?
-    createdAt      DateTime     @default(now()) @map("created_at")
-    updatedAt      DateTime     @updatedAt @map("updated_at")
-    bills          Bill[]
-    payments       Payment[]
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@index([organizationId])
+  @@index([organizationId, deleted_at])
+  @@map("suppliers")
+}
 
-    @@index([organizationId])
-    @@map("suppliers")
-  }
+model Bill {
+  id                      String          @id @default(uuid())
+  unitId                  String          @map("unit_id")
+  supplierId              String?         @map("supplier_id")
+  category                BillCategory
+  billNumber              String?         @map("bill_number")
+  amount                  Decimal         @db.Decimal(15, 2)
+  description             String?
+  billDate                DateTime?       @map("bill_date")
+  dueDate                 DateTime?       @map("due_date")
+  periodMonth             Int             @map("period_month")
+  periodYear              Int             @map("period_year")
+  isPaid                  Boolean         @default(false) @map("is_paid")
+  paid_from_moneybox      Boolean         @default(false)
+  paid_from_extraordinary Boolean         @default(false)
+  createdAt               DateTime        @default(now()) @map("created_at")
+  is_request              Boolean         @default(false)
+  created_by_id           String?
+  deleted_at              DateTime?
+  deleted_by_id           String?
+  updated_at              DateTime        @default(now())
+  updated_by_id           String?
+  period_id               String?
+  periods                 periods?        @relation(fields: [period_id], references: [id])
+  supplier                Supplier?       @relation(fields: [supplierId], references: [id])
+  unit                    Unit            @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  expenseDetails          ExpenseDetail[]
+  payments                Payment[]
+  refunds                 refunds[]
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FACTURAS/GASTOS DE PROVEEDORES (Bills)
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Representa gastos del edificio que pueden o no estar vinculados a un proveedor
-  // Ejemplos:
-  // - CON proveedor: factura de ascensores, limpieza, mantenimiento
-  // - SIN proveedor: luz, gas, agua (gastos directos sin proveedor en el sistema)
-  // ═══════════════════════════════════════════════════════════════════════════
-  model Bill {
-    id             String         @id @default(uuid())
-    unitId         String         @map("unit_id")
-    supplierId     String?        @map("supplier_id")  // OPCIONAL - permite gastos sin proveedor
-    category       String                              // "Electricidad", "Ascensores", "Limpieza", etc.
-    billNumber     String?        @map("bill_number")  // Número de factura si existe
-    amount         Decimal        @db.Decimal(15, 2)
-    description    String?
-    billDate       DateTime       @map("bill_date")    // Fecha de emisión de la factura
-    dueDate        DateTime?      @map("due_date")     // Fecha de vencimiento
-    periodMonth    Int            @map("period_month") // Mes al que corresponde el gasto
-    periodYear     Int            @map("period_year")  // Año al que corresponde el gasto
-    isPaid         Boolean        @default(false) @map("is_paid")
-    createdAt      DateTime       @default(now()) @map("created_at")
+  @@index([unitId])
+  @@index([supplierId])
+  @@index([periodMonth, periodYear])
+  @@index([billDate])
+  @@index([period_id])
+  @@index([unitId, deleted_at])
+  @@index([unitId, is_request])
+  @@map("bills")
+}
 
-    unit           Unit           @relation(fields: [unitId], references: [id], onDelete: Cascade)
-    supplier       Supplier?      @relation(fields: [supplierId], references: [id])
-    expenseDetails ExpenseDetail[] // Referencia desde detalles de expensa
+model Payment {
+  id               String        @id @default(uuid())
+  supplierId       String?       @map("supplier_id")
+  unitId           String?       @map("unit_id")
+  bill_id          String?
+  amount           Decimal       @db.Decimal(15, 2)
+  paymentDate      DateTime      @map("payment_date")
+  paymentMethod    String?       @map("payment_method")
+  description      String?
+  fundingSource    FundingSource @default(consorcio) @map("funding_source")
+  advancedByUserId String?       @map("advanced_by_user_id")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  created_by_id    String?
+  deleted_at       DateTime?
+  deleted_by_id    String?
+  updated_at       DateTime      @default(now())
+  updated_by_id    String?
+  void_reason      String?
+  voided_at        DateTime?
+  voided_by_id     String?
+  advancedByUser   User?         @relation("UserAdvances", fields: [advancedByUserId], references: [id])
+  bills            Bill?         @relation(fields: [bill_id], references: [id])
+  supplier         Supplier?     @relation(fields: [supplierId], references: [id])
+  unit             Unit?         @relation(fields: [unitId], references: [id])
 
-    @@index([unitId])
-    @@index([supplierId])
-    @@index([periodMonth, periodYear])
-    @@index([billDate])
-    @@map("bills")
-  }
+  @@index([supplierId])
+  @@index([unitId])
+  @@index([paymentDate])
+  @@index([fundingSource])
+  @@index([advancedByUserId])
+  @@index([bill_id])
+  @@index([deleted_at])
+  @@map("payments")
+}
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PAGOS A PROVEEDORES (Payments)
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Representa pagos realizados a proveedores
-  // Estado de cuenta proveedor: suma(Bills) - suma(Payments)
-  // Permite registrar si el admin adelantó dinero de su bolsillo
-  // ═══════════════════════════════════════════════════════════════════════════
-  model Payment {
-    id               String        @id @default(uuid())
-    supplierId       String        @map("supplier_id")
-    unitId           String?       @map("unit_id")
-    amount           Decimal       @db.Decimal(15, 2)
-    paymentDate      DateTime      @map("payment_date")
-    paymentMethod    String?       @map("payment_method") // "efectivo", "transferencia", "cheque"
-    description      String?
+model AdminReimbursement {
+  id                String       @id @default(uuid())
+  organizationId    String       @map("organization_id")
+  userId            String       @map("user_id")
+  amount            Decimal      @db.Decimal(15, 2)
+  description       String?
+  reimbursementDate DateTime     @map("reimbursement_date")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User         @relation("UserReimbursements", fields: [userId], references: [id])
 
-    // Fuente del dinero: consorcio (fondos recaudados) o adelanto del admin
-    fundingSource    FundingSource @default(consorcio) @map("funding_source")
+  @@index([organizationId])
+  @@index([userId])
+  @@index([reimbursementDate])
+  @@map("admin_reimbursements")
+}
 
-    // Si es adelanto del admin, quién lo hizo
-    advancedByUserId String?       @map("advanced_by_user_id")
-    advancedByUser   User?         @relation("UserAdvances", fields: [advancedByUserId], references: [id])
+model Expense {
+  id                           String                         @id @default(uuid())
+  unitId                       String                         @map("unit_id")
+  subunitId                    String                         @map("subunit_id")
+  periodMonth                  Int                            @map("period_month")
+  periodYear                   Int                            @map("period_year")
+  period_month_from            Int                            @default(0)
+  period_year_from             Int                            @default(0)
+  totalBuildingExpenses        Decimal                        @map("total_building_expenses") @db.Decimal(15, 2)
+  subunitAmount                Decimal                        @map("subunit_amount") @db.Decimal(15, 2)
+  ownershipPercentage          Decimal                        @map("ownership_percentage") @db.Decimal(5, 2)
+  title                        String
+  description                  String?
+  status                       ExpenseStatus                  @default(pendiente)
+  dueDate                      DateTime                       @map("due_date")
+  paidDate                     DateTime?                      @map("paid_date")
+  paymentType                  String?                        @map("payment_type")
+  paidAmount                   Decimal?                       @map("paid_amount") @db.Decimal(15, 2)
+  paymentMethod                String?                        @map("payment_method")
+  previousPeriodDebt           Decimal?                       @default(0) @map("previous_period_debt") @db.Decimal(15, 2)
+  previous_anticipation_debt   Decimal?                       @default(0) @db.Decimal(15, 2)
+  surcharge_percentage         Decimal?                       @default(0) @db.Decimal(5, 2)
+  surcharge_amount             Decimal?                       @default(0) @db.Decimal(15, 2)
+  total_building_anticipations Decimal?                       @default(0) @db.Decimal(15, 2)
+  subunit_anticipation_amount  Decimal?                       @default(0) @db.Decimal(15, 2)
+  anticipation_paid            Boolean                        @default(false)
+  anticipation_paid_date       DateTime?
+  anticipation_paid_amount     Decimal?                       @default(0) @db.Decimal(15, 2)
+  createdAt                    DateTime                       @default(now()) @map("created_at")
+  created_by_id                String?
+  deleted_at                   DateTime?
+  deleted_by_id                String?
+  updated_at                   DateTime                       @default(now())
+  updated_by_id                String?
+  total_building_refunds       Decimal?                       @default(0) @db.Decimal(15, 2)
+  period_id                    String?
+  bank_movements               bank_movements[]
+  expense_anticipation_details expense_anticipation_details[]
+  expenseDetails               ExpenseDetail[]
+  periods                      periods?                       @relation(fields: [period_id], references: [id])
+  subunit                      Subunit                        @relation(fields: [subunitId], references: [id], onDelete: Cascade)
+  unit                         Unit                           @relation(fields: [unitId], references: [id], onDelete: Cascade)
 
-    // Control de reembolso al admin
-    isReimbursed     Boolean       @default(false) @map("is_reimbursed")
-    reimbursedAt     DateTime?     @map("reimbursed_at")
+  @@index([unitId])
+  @@index([subunitId])
+  @@index([periodMonth, periodYear])
+  @@index([status])
+  @@index([period_id])
+  @@index([unitId, deleted_at])
+  @@map("expenses")
+}
 
-    createdAt        DateTime      @default(now()) @map("created_at")
+model ExpenseDetail {
+  id          String   @id @default(uuid())
+  expenseId   String   @map("expense_id")
+  billId      String?  @map("bill_id")
+  category    String
+  amount      Decimal  @db.Decimal(15, 2)
+  description String?
+  refund_id   String?
+  bill        Bill?    @relation(fields: [billId], references: [id])
+  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  refunds     refunds? @relation(fields: [refund_id], references: [id])
 
-    supplier         Supplier      @relation(fields: [supplierId], references: [id])
-    unit             Unit?         @relation(fields: [unitId], references: [id])
+  @@index([expenseId])
+  @@index([billId])
+  @@index([refund_id])
+  @@map("expense_details")
+}
 
-    @@index([supplierId])
-    @@index([unitId])
-    @@index([paymentDate])
-    @@index([fundingSource])
-    @@index([advancedByUserId])
-    @@map("payments")
-  }
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model anticipations {
+  id                           String                         @id
+  unit_id                      String
+  description                  String
+  amount                       Decimal                        @db.Decimal(15, 2)
+  period_month                 Int
+  period_year                  Int
+  created_at                   DateTime                       @default(now())
+  created_by_id                String?
+  deleted_at                   DateTime?
+  deleted_by_id                String?
+  updated_at                   DateTime                       @default(now())
+  updated_by_id                String?
+  period_id                    String?
+  periods                      periods?                       @relation(fields: [period_id], references: [id])
+  units                        Unit                           @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+  expense_anticipation_details expense_anticipation_details[]
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // REEMBOLSOS AL ADMINISTRADOR (AdminReimbursements)
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Cuando el consorcio devuelve al admin el dinero que adelantó
-  // ═══════════════════════════════════════════════════════════════════════════
-  model AdminReimbursement {
-    id                String       @id @default(uuid())
-    organizationId    String       @map("organization_id")
-    userId            String       @map("user_id")
-    amount            Decimal      @db.Decimal(15, 2)
-    description       String?
-    reimbursementDate DateTime     @map("reimbursement_date")
-    createdAt         DateTime     @default(now()) @map("created_at")
+  @@index([period_id])
+  @@index([period_month, period_year])
+  @@index([unit_id, deleted_at])
+  @@index([unit_id])
+}
 
-    organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-    user              User         @relation("UserReimbursements", fields: [userId], references: [id])
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model audit_logs {
+  id              String       @id
+  organization_id String
+  user_id         String?
+  entity          String
+  entity_id       String
+  action          AuditAction
+  before          Json?
+  after           Json?
+  ip              String?
+  user_agent      String?
+  created_at      DateTime     @default(now())
+  organizations   Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  users           User?        @relation(fields: [user_id], references: [id])
 
-    @@index([organizationId])
-    @@index([userId])
-    @@index([reimbursementDate])
-    @@map("admin_reimbursements")
-  }
+  @@index([entity, entity_id])
+  @@index([organization_id, created_at])
+  @@index([user_id, created_at])
+}
 
-  enum FundingSource {
-    consorcio        // Pagado con fondos del consorcio (expensas cobradas)
-    adelanto_admin   // El administrador puso de su bolsillo
-  }
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model bank_imports {
+  id               String           @id
+  unit_id          String
+  bank_key         String
+  file_name        String
+  imported_at      DateTime         @default(now())
+  imported_by_id   String?
+  total_imported   Int              @default(0)
+  total_duplicates Int              @default(0)
+  total_discarded  Int              @default(0)
+  total_auto_match Int              @default(0)
+  total_ambiguous  Int              @default(0)
+  users            User?            @relation(fields: [imported_by_id], references: [id])
+  units            Unit             @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+  bank_movements   bank_movements[]
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // LIQUIDACIÓN DE EXPENSAS A UNIDADES FUNCIONALES (Expenses)
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Representa la liquidación mensual de expensas a cada departamento/unidad funcional
-  // Se genera a partir de las Bills del período, distribuyendo según % de propiedad
-  // ═══════════════════════════════════════════════════════════════════════════
-  model Expense {
-    id                    String          @id @default(uuid())
-    unitId                String          @map("unit_id")
-    subunitId             String          @map("subunit_id")
-    periodMonth           Int             @map("period_month")
-    periodYear            Int             @map("period_year")
-    totalBuildingExpenses Decimal         @map("total_building_expenses") @db.Decimal(15, 2)
-    subunitAmount         Decimal         @map("subunit_amount") @db.Decimal(15, 2)
-    ownershipPercentage   Decimal         @map("ownership_percentage") @db.Decimal(5, 2)
-    title                 String
-    description           String?
-    status                ExpenseStatus   @default(pendiente)
-    dueDate               DateTime        @map("due_date")
-    paidDate              DateTime?       @map("paid_date")
-    paymentType           String?         @map("payment_type")       // "total" | "parcial"
-    paidAmount            Decimal?        @map("paid_amount") @db.Decimal(15, 2)
-    paymentMethod         String?         @map("payment_method")     // "efectivo" | "transferencia"
-    previousPeriodDebt    Decimal?        @default(0) @map("previous_period_debt") @db.Decimal(15, 2)
-    createdAt             DateTime        @default(now()) @map("created_at")
+  @@index([unit_id, imported_at])
+}
 
-    unit                  Unit            @relation(fields: [unitId], references: [id], onDelete: Cascade)
-    subunit               Subunit         @relation(fields: [subunitId], references: [id], onDelete: Cascade)
-    expenseDetails        ExpenseDetail[]
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model bank_movements {
+  id                 String             @id
+  unit_id            String
+  fecha_operacion    DateTime           @db.Date
+  descripcion        String
+  amount             Decimal            @db.Decimal(15, 2)
+  originator_name    String?
+  originator_cuit    String?            @db.VarChar(11)
+  originator_cbu     String?            @db.VarChar(22)
+  concepto           String?
+  hash_original      String             @unique
+  bank_key           String
+  matched_expense_id String?
+  status             BankMovementStatus @default(PENDING)
+  candidates         Json?
+  imported_at        DateTime           @default(now())
+  resolved_at        DateTime?
+  resolved_by_id     String?
+  import_batch_id    String?
+  bank_imports       bank_imports?      @relation(fields: [import_batch_id], references: [id])
+  expenses           Expense?           @relation(fields: [matched_expense_id], references: [id])
+  users              User?              @relation(fields: [resolved_by_id], references: [id])
+  units              Unit               @relation(fields: [unit_id], references: [id], onDelete: Cascade)
 
-    @@index([unitId])
-    @@index([subunitId])
-    @@index([periodMonth, periodYear])
-    @@index([status])
-    @@map("expenses")
-  }
+  @@index([fecha_operacion])
+  @@index([import_batch_id])
+  @@index([matched_expense_id])
+  @@index([unit_id, status])
+}
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // DESGLOSE DE EXPENSAS (ExpenseDetails)
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Detalle de cada rubro que compone la expensa de una unidad funcional
-  // Vincula cada item con la factura original (Bill) para trazabilidad
-  // ═══════════════════════════════════════════════════════════════════════════
-  model ExpenseDetail {
-    id          String   @id @default(uuid())
-    expenseId   String   @map("expense_id")
-    billId      String?  @map("bill_id")       // Referencia a la factura original
-    category    String                         // "Electricidad", "Agua", "Limpieza", etc.
-    amount      Decimal  @db.Decimal(15, 2)   // Monto prorrateado para este depto
-    description String?
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cashbox_movements {
+  id             String       @id
+  cashbox_id     String
+  type           MovementType
+  amount         Decimal      @db.Decimal(15, 2)
+  description    String
+  payment_method String?
+  expense_id     String?
+  installment_id String?
+  payment_id     String?
+  created_at     DateTime     @default(now())
+  cashboxes      cashboxes    @relation(fields: [cashbox_id], references: [id], onDelete: Cascade)
 
-    expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-    bill        Bill?    @relation(fields: [billId], references: [id])
+  @@index([cashbox_id])
+}
 
-    @@index([expenseId])
-    @@index([billId])
-    @@map("expense_details")
-  }
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cashboxes {
+  id                String              @id
+  unit_id           String
+  type              CashBoxType
+  balance           Decimal             @default(0) @db.Decimal(15, 2)
+  created_at        DateTime            @default(now())
+  updated_at        DateTime
+  cashbox_movements cashbox_movements[]
+  units             Unit                @relation(fields: [unit_id], references: [id], onDelete: Cascade)
 
-  enum Role {
-    admin_global
-    admin_organizacion
-    usuario
-  }
+  @@unique([unit_id, type])
+  @@index([unit_id])
+}
 
-  enum SubscriptionStatus {
-    active
-    inactive
-    suspended
-  }
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model expense_anticipation_details {
+  id              String        @id
+  expense_id      String
+  anticipation_id String
+  amount          Decimal       @db.Decimal(15, 2)
+  description     String
+  anticipations   anticipations @relation(fields: [anticipation_id], references: [id], onDelete: Cascade)
+  expenses        Expense       @relation(fields: [expense_id], references: [id], onDelete: Cascade)
 
-  enum PropertyType {
-    casa
-    departamento
-    terreno
-    local_comercial
-    oficina
-    cochera
-    galpon
-  }
+  @@index([anticipation_id])
+  @@index([expense_id])
+}
 
-  enum OperationType {
-    venta
-    alquiler
-    venta_alquiler
-  }
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model extraordinary_expenses {
+  id                         String                       @id
+  unit_id                    String
+  title                      String
+  description                String?
+  total_amount               Decimal                      @db.Decimal(15, 2)
+  start_month                Int                          @default(1)
+  year                       Int
+  number_of_installments     Int                          @default(12)
+  created_at                 DateTime                     @default(now())
+  updated_at                 DateTime
+  units                      Unit                         @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+  extraordinary_installments extraordinary_installments[]
 
-  enum Currency {
-    ARS
-    USD
-  }
+  @@index([unit_id])
+  @@index([year])
+}
 
-  enum PropertyStatus {
-    disponible
-    reservada
-    vendida
-    alquilada
-    en_construccion
-  }
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model extraordinary_installments {
+  id                       String                 @id
+  extraordinary_expense_id String
+  subunit_id               String
+  installment_number       Int
+  month                    Int
+  year                     Int
+  amount                   Decimal                @db.Decimal(15, 2)
+  ownership_percentage     Decimal                @db.Decimal(5, 2)
+  status                   ExpenseStatus          @default(pendiente)
+  paid_date                DateTime?
+  paid_amount              Decimal?               @db.Decimal(15, 2)
+  payment_method           String?
+  created_at               DateTime               @default(now())
+  created_by_id            String?
+  deleted_at               DateTime?
+  deleted_by_id            String?
+  updated_at               DateTime               @default(now())
+  updated_by_id            String?
+  extraordinary_expenses   extraordinary_expenses @relation(fields: [extraordinary_expense_id], references: [id], onDelete: Cascade)
+  subunits                 Subunit                @relation(fields: [subunit_id], references: [id], onDelete: Cascade)
 
-  enum Orientation {
-    norte
-    sur
-    este
-    oeste
-  }
+  @@index([extraordinary_expense_id, deleted_at])
+  @@index([extraordinary_expense_id])
+  @@index([month, year])
+  @@index([subunit_id])
+}
 
-  enum ExpenseStatus {
-    pendiente
-    pagado
-    vencido
-  }
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model particular_expenses {
+  id            String    @id
+  unit_id       String
+  subunit_id    String
+  amount        Decimal   @db.Decimal(15, 2)
+  description   String
+  period_month  Int
+  period_year   Int
+  created_at    DateTime  @default(now())
+  updated_at    DateTime
+  created_by_id String?
+  deleted_at    DateTime?
+  deleted_by_id String?
+  updated_by_id String?
+  period_id     String?
+  periods       periods?  @relation(fields: [period_id], references: [id])
+  subunits      Subunit   @relation(fields: [subunit_id], references: [id], onDelete: Cascade)
+  units         Unit      @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+
+  @@index([period_id])
+  @@index([subunit_id])
+  @@index([subunit_id, period_month, period_year])
+  @@index([unit_id, deleted_at])
+  @@index([unit_id])
+  @@index([unit_id, period_month, period_year])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model periods {
+  id                  String                @id
+  unit_id             String
+  month               Int
+  year                Int
+  status              PeriodStatus          @default(OPEN)
+  closed_at           DateTime?
+  closed_by_id        String?
+  reopened_at         DateTime?
+  reopen_reason       String?
+  created_at          DateTime              @default(now())
+  anticipations       anticipations[]
+  bills               Bill[]
+  expenses            Expense[]
+  particular_expenses particular_expenses[]
+  users               User?                 @relation(fields: [closed_by_id], references: [id])
+  units               Unit                  @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+  refunds             refunds[]
+
+  @@unique([unit_id, month, year])
+  @@index([unit_id, status])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model property_cards {
+  id                        String   @id
+  property_id               String   @unique
+  first_name                String
+  last_name                 String
+  contact_phone             String?
+  admission_date            DateTime
+  land_width                Decimal? @db.Decimal(10, 2)
+  land_length               Decimal? @db.Decimal(10, 2)
+  has_blueprints            Boolean  @default(false)
+  has_keys                  Boolean  @default(false)
+  has_sign                  Boolean  @default(false)
+  has_deed                  Boolean  @default(false)
+  has_cadastral_certificate Boolean  @default(false)
+  has_credit_approval       Boolean  @default(false)
+  notes                     Json?    @default("[]")
+  created_at                DateTime @default(now())
+  updated_at                DateTime
+  properties                Property @relation(fields: [property_id], references: [id], onDelete: Cascade)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model refunds {
+  id                      String           @id
+  unit_id                 String
+  supplier_id             String?
+  original_bill_id        String?
+  origin                  RefundOrigin
+  allocation_method       AllocationMethod @default(BY_OWNERSHIP)
+  assigned_subunit_ids    Json?
+  amount                  Decimal          @db.Decimal(15, 2)
+  description             String?
+  refund_date             DateTime?
+  period_month            Int
+  period_year             Int
+  paid_from_moneybox      Boolean          @default(false)
+  paid_from_extraordinary Boolean          @default(false)
+  is_request              Boolean          @default(false)
+  created_at              DateTime         @default(now())
+  updated_at              DateTime         @default(now())
+  created_by_id           String?
+  updated_by_id           String?
+  deleted_at              DateTime?
+  deleted_by_id           String?
+  period_id               String?
+  expense_details         ExpenseDetail[]
+  bills                   Bill?            @relation(fields: [original_bill_id], references: [id])
+  periods                 periods?         @relation(fields: [period_id], references: [id])
+  suppliers               Supplier?        @relation(fields: [supplier_id], references: [id])
+  units                   Unit             @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+
+  @@index([original_bill_id])
+  @@index([period_id])
+  @@index([period_month, period_year])
+  @@index([supplier_id])
+  @@index([unit_id, deleted_at])
+  @@index([unit_id])
+  @@index([unit_id, is_request])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model supplier_initial_balances {
+  id          String   @id
+  supplier_id String
+  unit_id     String
+  amount      Decimal  @db.Decimal(15, 2)
+  note        String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime
+  suppliers   Supplier @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+  units       Unit     @relation(fields: [unit_id], references: [id], onDelete: Cascade)
+
+  @@unique([supplier_id, unit_id])
+  @@index([supplier_id])
+  @@index([unit_id])
+}
+
+enum FundingSource {
+  consorcio
+  caja_consorcio
+  caja_extraordinaria
+  adelanto_admin
+}
+
+enum Role {
+  admin_global
+  admin_organizacion
+  usuario
+  consorcista
+}
+
+enum SubscriptionStatus {
+  active
+  inactive
+  suspended
+}
+
+enum PropertyType {
+  casa
+  departamento
+  ph
+  chalet
+  ph_chalet
+  terreno
+  local_comercial
+  oficina
+  cochera
+  galpon
+}
+
+enum OperationType {
+  venta
+  alquiler
+  venta_alquiler
+}
+
+enum Currency {
+  ARS
+  USD
+}
+
+enum PropertyStatus {
+  disponible
+  reservada
+  vendida
+  alquilada
+  en_construccion
+}
+
+enum Orientation {
+  norte
+  sur
+  este
+  oeste
+}
+
+enum ExpenseStatus {
+  pendiente
+  pagado
+  vencido
+}
+
+enum AllocationMethod {
+  BY_OWNERSHIP
+  EQUAL_SHARES
+  PARTICULAR
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  GENERATE_EXPENSE
+  CLOSE_PERIOD
+  RECONCILE
+  VOID
+}
+
+enum BankMovementStatus {
+  PENDING
+  AUTO_MATCHED
+  AMBIGUOUS
+  MANUAL_MATCHED
+  IGNORED
+}
+
+enum BillCategory {
+  Sueldos
+  Cargas_Sociales     @map("Cargas Sociales")
+  Servicios_Publicos  @map("Servicios Publicos")
+  Abono_Servicios     @map("Abono Servicios")
+  Mantenimiento
+  Administracion
+  Seguros
+  Caja_Previsiones    @map("Caja Previsiones")
+  Caja_Extraordinaria @map("Caja Extraordinaria")
+  Otros
+}
+
+enum CashBoxType {
+  ORDINARIA
+  EXTRAORDINARIA
+  PREVISIONES
+}
+
+enum MovementType {
+  INGRESO
+  EGRESO
+}
+
+enum PeriodStatus {
+  OPEN
+  CLOSED
+  LIQUIDADO
+}
+
+enum RefundOrigin {
+  SUPPLIER
+  SUBSIDY
+  BILLING_ADJUSTMENT
+  JUDICIAL_RECOVERY
+  OTHER
+}
