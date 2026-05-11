@@ -17,7 +17,7 @@ export function FeaturedProperties({ properties }: { properties: PropertyWithRel
 
   return (
     <section className="py-24 bg-gray-50/50">
-      <div className="container mx-auto px-4">
+      <div className="content-wrap">
         {/* Section header — editorial style like Sotheby's */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -31,7 +31,7 @@ export function FeaturedProperties({ properties }: { properties: PropertyWithRel
               <p className="text-sm font-semibold uppercase tracking-widest text-brand-dark mb-2">
                 Selección exclusiva
               </p>
-              <h2 className="text-3xl font-light text-gray-900 sm:text-4xl lg:text-5xl">
+              <h2 className="title-h2">
                 Propiedades destacadas
               </h2>
             </div>

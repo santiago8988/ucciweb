@@ -48,14 +48,12 @@ export function Hero({ propertyCount }: { propertyCount: number }) {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
         style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1561816646-b5b12a9b92ed?w=1920&q=80')",
+          backgroundImage: "url('/hero-playa-grande.jpg')",
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-ink/75 via-ink/45 to-ink/85" />
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-brand/10 to-transparent" />
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.4)_100%)]" />
 
-      <div className="relative z-10 container mx-auto px-4">
+      <div className="relative z-10 content-wrap">
         {/* Main headline — Sotheby's editorial style */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -143,25 +141,6 @@ export function Hero({ propertyCount }: { propertyCount: number }) {
           </div>
         </motion.div>
 
-        {/* Trust stats — Knight Frank style */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.7 }}
-          className="mx-auto mt-16 flex max-w-2xl items-center justify-center gap-8 md:gap-16"
-        >
-          {[
-            { value: "+60", label: "Años de experiencia" },
-            { value: "100%", label: "Propiedades verificadas" },
-            { value: "24hs", label: "Respuesta garantizada" },
-          
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <p className="text-2xl font-semibold text-white md:text-3xl">{stat.value}</p>
-              <p className="mt-1 text-xs  text-white uppercase tracking-wider">{stat.label}</p>
-            </div>
-          ))}
-        </motion.div>
       </div>
 
       {/* Scroll indicator */}

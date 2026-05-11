@@ -34,8 +34,8 @@ export default function ContactoPage() {
           className="object-cover opacity-30"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/40" />
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.4)_100%)]" />
+        <div className="content-wrap relative z-10">
           <div className="max-w-2xl">
             <h1 className="text-4xl font-light text-white sm:text-5xl lg:text-6xl">
               Contactanos
@@ -50,7 +50,7 @@ export default function ContactoPage() {
 
       {/* Office info bar */}
       <section className="relative -mt-14 z-10">
-        <div className="container mx-auto px-4">
+        <div className="content-wrap">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <InfoCard
               icon={MapPin}
@@ -77,8 +77,8 @@ export default function ContactoPage() {
             <InfoCard
               icon={Clock}
               title="Horario Oficina"
-              primary="Lun - Vie · 9 a 18hs"
-              secondary="Sábados con cita previa"
+              primary="Lun - Vie · 9 a 13hs · 15 a 18:30hs"
+              secondary="Sábados 10 a 13hs · Domingos cerrado"
             />
           </div>
         </div>
@@ -86,12 +86,12 @@ export default function ContactoPage() {
 
       {/* Departments */}
       <section className="py-24">
-        <div className="container mx-auto px-4">
+        <div className="content-wrap">
           <div className="mb-12 max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-widest text-brand-dark mb-2">
               Áreas de atención
             </p>
-            <h2 className="text-3xl font-light text-ink sm:text-4xl">
+            <h2 className="title-h2">
               Elegí cómo querés contactarnos
             </h2>
             <div className="mt-4 h-px bg-gradient-to-r from-brand to-transparent max-w-xs" />
@@ -166,13 +166,13 @@ export default function ContactoPage() {
 
       {/* Office & Socials */}
       <section className="pb-24">
-        <div className="container mx-auto px-4">
+        <div className="content-wrap">
           <div className="grid gap-8 overflow-hidden rounded-3xl border border-ink/10 bg-sand-soft/40 lg:grid-cols-2">
             <div className="p-10 lg:p-14">
               <p className="text-sm font-semibold uppercase tracking-widest text-brand-dark mb-2">
                 Visitanos
               </p>
-              <h2 className="text-3xl font-light text-ink sm:text-4xl">
+              <h2 className="title-h2">
                 {OFFICE.address}
               </h2>
               <p className="mt-3 text-ink/60">{OFFICE.city}</p>

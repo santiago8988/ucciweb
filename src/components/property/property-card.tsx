@@ -57,11 +57,11 @@ export function PropertyCard({
 
             {/* Badges — top left */}
             <div className="absolute top-3 left-3 flex gap-2">
-              <Badge className="bg-brand text-black text-xs font-semibold shadow-md">
+              <Badge className="bg-white text-ink text-[11px] font-semibold uppercase tracking-[0.08em] shadow-md px-2.5">
                 {operationLabel}
               </Badge>
               {property.featured && (
-                <Badge className="bg-[#ED1B24] text-white text-xs font-semibold shadow-md">
+                <Badge className="bg-[#ED1B24] text-white text-[11px] font-semibold uppercase tracking-[0.08em] shadow-md px-2.5">
                   Destacada
                 </Badge>
               )}

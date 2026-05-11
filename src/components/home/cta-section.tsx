@@ -34,7 +34,7 @@ export function CTASection() {
     <>
       {/* Services — Knight Frank / Savills style */}
       <section className="py-24">
-        <div className="container mx-auto px-4">
+        <div className="content-wrap">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -45,7 +45,7 @@ export function CTASection() {
             <p className="text-sm font-semibold uppercase tracking-widest text-brand mb-2">
               Nuestros servicios
             </p>
-            <h2 className="text-3xl font-light text-gray-900 sm:text-4xl lg:text-5xl">
+            <h2 className="title-h2">
               ¿Cómo podemos ayudarte?
             </h2>
             <div className="mt-4 h-px bg-gradient-to-r from-brand/40 to-transparent max-w-xs" />
@@ -74,7 +74,7 @@ export function CTASection() {
 
       {/* CTA Banner — Compass style gradient */}
       <section className="py-20">
-        <div className="container mx-auto px-4">
+        <div className="content-wrap">
           <motion.div
             initial={{ opacity: 0, scale: 0.97 }}
             whileInView={{ opacity: 1, scale: 1 }}

@@ -3,8 +3,8 @@ export default function Loading() {
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden bg-ink pt-36 pb-20 md:pt-44 md:pb-24">
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-brand/10 to-transparent" />
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.4)_100%)]" />
+        <div className="content-wrap relative z-10">
           <div className="h-3 w-28 rounded bg-white/20 animate-pulse" />
           <div className="mt-5 h-12 w-full max-w-md rounded bg-white/15 animate-pulse" />
           <div className="mt-6 h-4 w-full max-w-xl rounded bg-white/10 animate-pulse" />
@@ -12,7 +12,7 @@ export default function Loading() {
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-16">
+      <div className="content-wrap py-16">
         <div className="mb-8 flex items-end justify-between gap-4">
           <div className="h-4 w-40 rounded bg-gray-200 animate-pulse" />
           <div className="h-4 w-24 rounded bg-gray-200 animate-pulse" />

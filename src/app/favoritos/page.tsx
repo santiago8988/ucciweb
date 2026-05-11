@@ -45,8 +45,8 @@ export default function FavoritosPage() {
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden bg-ink pt-36 pb-20 md:pt-44 md:pb-24">
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-brand/10 to-transparent" />
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.4)_100%)]" />
+        <div className="content-wrap relative z-10">
           <p className="text-sm font-semibold uppercase tracking-widest text-brand mb-4">
             Mis favoritos
           </p>
@@ -60,7 +60,7 @@ export default function FavoritosPage() {
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-16">
+      <div className="content-wrap py-16">
         {state.status !== "ready" ? (
           <div className="py-24 text-center text-ink/40">Cargando tus favoritos…</div>
         ) : state.properties.length === 0 ? (

@@ -1,7 +1,7 @@
 export default function Loading() {
   return (
     <div className="pt-20 bg-gray-50/60 min-h-screen">
-      <div className="container mx-auto px-4 py-6">
+      <div className="content-wrap py-6">
         <div className="flex flex-col gap-5 lg:flex-row">
           {/* Sidebar filters — desktop */}
           <aside className="hidden lg:block w-72 shrink-0">

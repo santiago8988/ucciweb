@@ -85,6 +85,16 @@ export default async function PropertyDetailPage({ params }: PageProps) {
     property.internalCode ? ` (cód. ${property.internalCode})` : ""
   }.`;
 
+  // Always use the agent's celular for both WhatsApp and call when available.
+  // Fall back: agent.phone, then department channels.
+  const agentNumber = property.agent?.mobilePhone || property.agent?.phone || null;
+  const contactWaNumber =
+    agentNumber || (waChannel?.kind === "whatsapp" ? waChannel.waNumber : null);
+  const contactWaDisplay = agentNumber || waChannel?.display || null;
+  const contactTelNumber =
+    agentNumber || (telChannel?.kind === "phone" ? telChannel.tel : null);
+  const contactTelDisplay = agentNumber || telChannel?.display || null;
+
   const features = [
     { icon: Bed, label: "Dormitorios", value: property.bedrooms },
     { icon: Bath, label: "Baños", value: property.bathrooms },
@@ -99,7 +109,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
 
   return (
     <div className="pt-24 pb-16">
-      <div className="container mx-auto px-4">
+      <div className="content-wrap">
         {/* Back */}
         <Link
           href="/propiedades"
@@ -248,6 +258,90 @@ export default async function PropertyDetailPage({ params }: PageProps) {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-28 space-y-6">
+              {/* Map — hidden when hideLocation is true. Placed on top so it aligns with the gallery. */}
+              {!property.hideLocation && property.latitude && property.longitude && (
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold text-gray-900 mb-3">Ubicación</h3>
+                    <div className="aspect-square rounded-lg overflow-hidden">
+                      <iframe
+                        src={`https://maps.google.com/maps?q=${property.latitude},${property.longitude}&z=15&output=embed`}
+                        className="h-full w-full border-0"
+                        loading="lazy"
+                        title="Ubicación de la propiedad"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Contact CTA — prefers agent celular for both WhatsApp and call */}
+              {(contactWaNumber || contactTelNumber) && (
+                <Card className="bg-brand-soft border-brand/30">
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold text-ink mb-1">
+                      ¿Te interesa esta propiedad?
+                    </h3>
+                    <p className="text-sm text-ink/60 mb-5">
+                      Contactanos para más información o para agendar una visita.
+                    </p>
+                    {property.agent && agentNumber && (
+                      <div className="mb-4 flex items-center gap-3">
+                        {property.agent.avatarUrl ? (
+                          <Image
+                            src={property.agent.avatarUrl}
+                            alt={property.agent.fullName}
+                            width={40}
+                            height={40}
+                            className="h-10 w-10 shrink-0 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-brand-dark">
+                            {property.agent.fullName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-[10px] uppercase tracking-widest text-ink/50">
+                            Te atiende
+                          </p>
+                          <p className="truncate text-sm font-semibold text-ink">
+                            {property.agent.fullName}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {contactWaNumber && (
+                        <a
+                          href={buildWhatsAppUrl(contactWaNumber, waMessage)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(
+                            buttonVariants(),
+                            "w-full bg-brand text-black hover:bg-brand-dark hover:text-white shadow-sm"
+                          )}
+                        >
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          WhatsApp · {contactWaDisplay}
+                        </a>
+                      )}
+                      {contactTelNumber && (
+                        <a
+                          href={buildTelUrl(contactTelNumber)}
+                          className={cn(
+                            buttonVariants({ variant: "outline" }),
+                            "w-full border-ink/15 hover:bg-white"
+                          )}
+                        >
+                          <Phone className="mr-2 h-4 w-4" />
+                          Llamar · {contactTelDisplay}
+                        </a>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Agent card — name + matricula only */}
               {property.agent && (
                 <Card>
@@ -285,94 +379,6 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                         {property.agent.bio}
                       </p>
                     )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Contact CTA — uses agent mobilePhone for both WhatsApp and tel */}
-              {(property.agent?.mobilePhone || waChannel) && (
-                <Card className="bg-brand-soft border-brand/30">
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold text-ink mb-1">
-                      ¿Te interesa esta propiedad?
-                    </h3>
-                    <p className="text-sm text-ink/60 mb-5">
-                      Contactanos para más información o para agendar una visita.
-                    </p>
-                    <div className="space-y-2">
-                      {property.agent?.mobilePhone ? (
-                        <>
-                          <a
-                            href={buildWhatsAppUrl(property.agent.mobilePhone, waMessage)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={cn(
-                              buttonVariants(),
-                              "w-full bg-brand text-black hover:bg-brand-dark hover:text-white shadow-sm"
-                            )}
-                          >
-                            <MessageCircle className="mr-2 h-4 w-4" />
-                            WhatsApp · {property.agent.mobilePhone}
-                          </a>
-                          <a
-                            href={buildTelUrl(property.agent.mobilePhone)}
-                            className={cn(
-                              buttonVariants({ variant: "outline" }),
-                              "w-full border-ink/15 hover:bg-white"
-                            )}
-                          >
-                            <Phone className="mr-2 h-4 w-4" />
-                            Llamar · {property.agent.mobilePhone}
-                          </a>
-                        </>
-                      ) : (
-                        <>
-                          {waChannel && waChannel.kind === "whatsapp" && (
-                            <a
-                              href={buildWhatsAppUrl(waChannel.waNumber, waMessage)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={cn(
-                                buttonVariants(),
-                                "w-full bg-brand text-black hover:bg-brand-dark hover:text-white shadow-sm"
-                              )}
-                            >
-                              <MessageCircle className="mr-2 h-4 w-4" />
-                              WhatsApp · {waChannel.display}
-                            </a>
-                          )}
-                          {telChannel && telChannel.kind === "phone" && (
-                            <a
-                              href={buildTelUrl(telChannel.tel)}
-                              className={cn(
-                                buttonVariants({ variant: "outline" }),
-                                "w-full border-ink/15 hover:bg-white"
-                              )}
-                            >
-                              <Phone className="mr-2 h-4 w-4" />
-                              Llamar · {telChannel.display}
-                            </a>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Map — hidden when hideLocation is true */}
-              {!property.hideLocation && property.latitude && property.longitude && (
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold text-gray-900 mb-3">Ubicación</h3>
-                    <div className="aspect-square rounded-lg overflow-hidden">
-                      <iframe
-                        src={`https://maps.google.com/maps?q=${property.latitude},${property.longitude}&z=15&output=embed`}
-                        className="h-full w-full border-0"
-                        loading="lazy"
-                        title="Ubicación de la propiedad"
-                      />
-                    </div>
                   </CardContent>
                 </Card>
               )}

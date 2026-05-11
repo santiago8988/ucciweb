@@ -76,7 +76,7 @@ export function Footer() {
                 <span className="text-sm">
                   Lunes a viernes
                   <br />
-                  <span className="text-ink">9:00 a 18:00 hs</span>
+                  <span className="text-ink">9:00 a 13:00 hs · 15:00 a 18:30 hs</span>
                 </span>
               </li>
               <li className="flex items-start gap-3">
@@ -84,7 +84,15 @@ export function Footer() {
                 <span className="text-sm">
                   Sábados
                   <br />
-                  <span className="text-ink">Con cita previa</span>
+                  <span className="text-ink">10:00 a 13:00 hs</span>
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Clock className="mt-0.5 h-4 w-4 text-ink shrink-0" />
+                <span className="text-sm">
+                  Domingos
+                  <br />
+                  <span className="text-ink">Cerrado</span>
                 </span>
               </li>
             </ul>

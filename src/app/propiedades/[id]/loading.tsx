@@ -1,7 +1,7 @@
 export default function Loading() {
   return (
     <div className="pt-24 pb-16">
-      <div className="container mx-auto px-4">
+      <div className="content-wrap">
         {/* Back */}
         <div className="mb-4 h-9 w-48 rounded-md bg-gray-200 animate-pulse" />
 

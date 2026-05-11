@@ -142,3 +142,12 @@
     color: #1c1c1c;
   }
 }
+
+@layer components {
+  .content-wrap {
+    @apply mx-auto w-full max-w-[1180px] px-6 md:px-10 lg:px-16;
+  }
+  .title-h2 {
+    @apply text-[29pt] font-normal tracking-[0.05em] text-ink;
+  }
+}
