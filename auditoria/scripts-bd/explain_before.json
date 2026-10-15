@@ -1,0 +1,108 @@
+[
+ {
+  "label": "listado: propiedades",
+  "medianMs": 1.91,
+  "rowsReturned": "12",
+  "plan": [
+   "Limit (actual time=1.662..1.672 rows=12.00 loops=1)",
+   "->  Sort (actual time=1.661..1.666 rows=12.00 loops=1)",
+   "Sort Key: created_at DESC",
+   "Sort Method: top-N heapsort  Memory: 63kB",
+   "->  Bitmap Heap Scan on properties (actual time=0.746..1.216 rows=281.00 loops=1)",
+   "->  BitmapAnd (actual time=0.701..0.702 rows=0.00 loops=1)"
+  ]
+ },
+ {
+  "label": "listado: imágenes (take 1)",
+  "medianMs": 0.277,
+  "rowsReturned": "149",
+  "plan": [
+   "Sort (actual time=0.208..0.240 rows=149.00 loops=1)",
+   "Sort Key: \"order\"",
+   "Sort Method: quicksort  Memory: 50kB",
+   "->  Bitmap Heap Scan on property_images (actual time=0.092..0.150 rows=149.00 loops=1)",
+   "->  Bitmap Index Scan on property_images_property_id_idx (actual time=0.061..0.062 rows=149.00 loops=1)"
+  ]
+ },
+ {
+  "label": "listado: count",
+  "medianMs": 1.016,
+  "rowsReturned": "1",
+  "plan": [
+   "Aggregate (actual time=1.225..1.228 rows=1.00 loops=1)",
+   "->  Bitmap Heap Scan on properties (actual time=0.659..1.101 rows=281.00 loops=1)",
+   "->  BitmapAnd (actual time=0.621..0.623 rows=0.00 loops=1)",
+   "->  Bitmap Index Scan on properties_organization_id_idx (actual time=0.018..0.019 rows=500.00 loops=1)",
+   "->  Bitmap Index Scan on properties_status_idx (actual time=0.598..0.598 rows=17420.00 loops=1)"
+  ]
+ },
+ {
+  "label": "listado con filtros",
+  "medianMs": 0.624,
+  "rowsReturned": "12",
+  "plan": [
+   "Limit (actual time=0.589..0.598 rows=12.00 loops=1)",
+   "->  Sort (actual time=0.587..0.592 rows=12.00 loops=1)",
+   "Sort Key: sale_price",
+   "Sort Method: quicksort  Memory: 47kB",
+   "->  Bitmap Heap Scan on properties (actual time=0.394..0.556 rows=15.00 loops=1)",
+   "->  BitmapAnd (actual time=0.346..0.347 rows=0.00 loops=1)"
+  ]
+ },
+ {
+  "label": "q: amenities ILIKE",
+  "medianMs": 1.062,
+  "rowsReturned": "162",
+  "plan": [
+   "Bitmap Heap Scan on properties (actual time=0.055..1.025 rows=162.00 loops=1)",
+   "->  Bitmap Index Scan on properties_organization_id_idx (actual time=0.017..0.018 rows=500.00 loops=1)"
+  ]
+ },
+ {
+  "label": "q: propiedades OR ILIKE",
+  "medianMs": 3.723,
+  "rowsReturned": "12",
+  "plan": [
+   "Limit (actual time=3.682..3.692 rows=12.00 loops=1)",
+   "->  Sort (actual time=3.681..3.685 rows=12.00 loops=1)",
+   "Sort Key: created_at DESC",
+   "Sort Method: top-N heapsort  Memory: 63kB",
+   "->  Bitmap Heap Scan on properties (actual time=0.733..3.522 rows=129.00 loops=1)",
+   "->  BitmapAnd (actual time=0.656..0.657 rows=0.00 loops=1)"
+  ]
+ },
+ {
+  "label": "localidades (distinct)",
+  "medianMs": 1.185,
+  "rowsReturned": "281",
+  "plan": [
+   "Sort (actual time=1.061..1.115 rows=281.00 loops=1)",
+   "Sort Key: locality",
+   "Sort Method: quicksort  Memory: 36kB",
+   "->  Bitmap Heap Scan on properties (actual time=0.695..0.914 rows=281.00 loops=1)",
+   "->  BitmapAnd (actual time=0.655..0.656 rows=0.00 loops=1)",
+   "->  Bitmap Index Scan on properties_organization_id_idx (actual time=0.020..0.020 rows=500.00 loops=1)"
+  ]
+ },
+ {
+  "label": "ficha: findFirst",
+  "medianMs": 0.043,
+  "rowsReturned": "1",
+  "plan": [
+   "Limit (actual time=0.019..0.020 rows=1.00 loops=1)",
+   "->  Index Scan using properties_pkey on properties (actual time=0.017..0.017 rows=1.00 loops=1)"
+  ]
+ },
+ {
+  "label": "ficha: imágenes",
+  "medianMs": 0.051,
+  "rowsReturned": "7",
+  "plan": [
+   "Sort (actual time=0.035..0.037 rows=7.00 loops=1)",
+   "Sort Key: \"order\"",
+   "Sort Method: quicksort  Memory: 18kB",
+   "->  Bitmap Heap Scan on property_images (actual time=0.027..0.030 rows=7.00 loops=1)",
+   "->  Bitmap Index Scan on property_images_property_id_idx (actual time=0.006..0.007 rows=7.00 loops=1)"
+  ]
+ }
+]
