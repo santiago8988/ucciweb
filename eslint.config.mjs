@@ -5,6 +5,11 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  // Plain Node scripts (CommonJS) run by hand, e.g. node db/verify-readonly.js.
+  {
+    files: ["db/**/*.js"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
@@ -14,6 +19,11 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Prisma client output (generated, not authored).
     "src/generated/**",
+    // Audit evidence (one-off analysis scripts) and local tool state.
+    "auditoria/**",
+    ".claude/**",
+    "test-results/**",
+    "playwright-report/**",
   ]),
 ]);
 

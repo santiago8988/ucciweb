@@ -12,13 +12,26 @@ import { cn } from "@/lib/utils";
 const KEY = "ucci:last-listing";
 const DEFAULT = "/propiedades";
 
+// Falls back to the referrer: if the visitor clicked a card before the listing
+// finished hydrating, the browser did a full navigation and nothing was stored.
+function fromReferrer(): string | null {
+  try {
+    const ref = new URL(document.referrer);
+    if (ref.origin !== window.location.origin || ref.pathname !== DEFAULT) return null;
+    return `${ref.pathname}${ref.search}`;
+  } catch {
+    return null;
+  }
+}
+
 function read(): string {
   try {
     const value = window.sessionStorage.getItem(KEY);
-    return value && value.startsWith(DEFAULT) ? value : DEFAULT;
+    if (value && value.startsWith(DEFAULT)) return value;
   } catch {
-    return DEFAULT;
+    // Storage unavailable: try the referrer.
   }
+  return fromReferrer() ?? DEFAULT;
 }
 
 /** Mounted on /propiedades: records the current listing URL. */
