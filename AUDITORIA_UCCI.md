@@ -127,6 +127,21 @@ Superficie pública: páginas RSC, 1 server action (favoritos), optimizador `/_n
 | Seguridad | Optimizador de imágenes abierto | Sí (proxy de dominios ajenos) | 🟡 |
 | Seguridad | Secretos en el repo o el historial | No | 🟢 |
 
+### Después de los quick wins y el bloque inmediato (medido el 14/10/2026 en `ucciweb.vercel.app`, commit `956307b`)
+
+| Página (mobile) | Perf antes → después | LCP antes → después | Peso antes → después | HTML completo del servidor |
+|---|---|---|---|---|
+| Home | 72 → **90** | 8,8 s → **3,3 s** | 1,8 MB → 0,5 MB | ~200 ms → 252 ms |
+| Listado | 72 → **88** | 8,2 s → **3,4 s** | 2,1 MB → 0,6 MB | 2,37 s → 1,92 s (sigue dinámico; falta AWS) |
+| Ficha (22 fotos) | 58 → 63 | 10,5 s → 7,5 s | 3,6 MB → 1,0 MB | 2,42 s → **0,22 s** (ISR, `x-vercel-cache: HIT`) |
+| Contacto | 62 → 65 | 11,1 s → 6,8 s | 2,2 MB → 0,8 MB | — |
+
+- **Mobile:** ancho = 360 px en las 7 páginas, incluida la ficha que medía 2304 px. Barra de WhatsApp visible sin scroll en la ficha.
+- **Datos y seguridad:** listado sin datos ocultos; 6/6 headers de seguridad; optimizador de imágenes cerrado; rol `web_readonly` con RLS limitado a UCCI (12 propiedades visibles, 0 de otras inmobiliarias).
+- **SEO:** sitemap con las 12 fichas; meta descriptions sin "undefined"; OG completo con imagen liviana; redirecciones desde el sitio actual.
+- **Lighthouse SEO:** da 66–69 en staging solo por `is-crawlable`, por el `X-Robots-Tag: noindex` intencional en `*.vercel.app`. En el dominio final no aplica.
+- **Lo que sigue frenando ficha y contacto:** el mapa embebido (PERF-06) y el retraso de render del contenido (~2 s de `elementRenderDelay`). Los dos están en el bloque de 1 mes.
+
 Metodología de rendimiento: Lighthouse 13.5.0 local, Chrome headless, 3 corridas por página y form factor, mediana. Validado con PageSpeed Insights (home mobile: 73 / LCP 8,0 s). Páginas: `/`, `/propiedades?op=venta&mon=USD&tipo=casa,departamento,terreno`, `/propiedades/4b15730f-…` (22 fotos), `/contacto`.
 
 ---
