@@ -60,7 +60,8 @@ test.describe("búsqueda y listado", () => {
     await page.goto("/");
     await page.evaluate((id) => localStorage.setItem("ucci:favorites", JSON.stringify([id])), soldId);
     await page.goto("/favoritos");
-    await expect(page.locator(`a[href="/propiedades/${soldId}"]`)).toBeVisible();
+    // Favorites load through a server action: allow for a cold serverless start.
+    await expect(page.locator(`a[href="/propiedades/${soldId}"]`)).toBeVisible({ timeout: 15_000 });
     await expect(page.locator(`a[href="/propiedades/${soldId}"]`).getByText("Vendida")).toBeVisible();
   });
 });
