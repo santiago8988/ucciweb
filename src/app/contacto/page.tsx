@@ -15,6 +15,7 @@ import {
   buildWhatsAppUrl,
   buildTelUrl,
 } from "@/lib/constants";
+import { MapEmbed } from "@/components/map-embed";
 
 export const metadata: Metadata = {
   title: "Contacto",
@@ -192,14 +193,13 @@ export default function ContactoPage() {
               </div>
             </div>
 
-            <div className="relative min-h-[340px] lg:min-h-full">
-              <iframe
-                src="https://maps.google.com/maps?q=UCCI+Propiedades+Mar+del+Plata&z=17&output=embed"
-                className="absolute inset-0 h-full w-full border-0 grayscale-[20%]"
-                loading="lazy"
-                title="Ubicación de UCCI Propiedades"
-              />
-            </div>
+            <MapEmbed
+              query="UCCI Propiedades Mar del Plata"
+              zoom={17}
+              title="Ubicación de UCCI Propiedades"
+              label={`${OFFICE.address}, ${OFFICE.city}`}
+              className="min-h-[340px] lg:min-h-full"
+            />
           </div>
         </div>
       </section>

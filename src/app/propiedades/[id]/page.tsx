@@ -33,6 +33,7 @@ import {
 } from "@/lib/format";
 import { toEmbedUrl } from "@/lib/video";
 import { MobileContactBar } from "@/components/property/mobile-contact-bar";
+import { MapEmbed } from "@/components/map-embed";
 
 export const revalidate = 60;
 
@@ -297,14 +298,12 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                 <Card>
                   <CardContent className="p-6">
                     <h3 className="font-semibold text-gray-900 mb-3">Ubicación</h3>
-                    <div className="aspect-square rounded-lg overflow-hidden">
-                      <iframe
-                        src={`https://maps.google.com/maps?q=${property.latitude},${property.longitude}&z=15&output=embed`}
-                        className="h-full w-full border-0"
-                        loading="lazy"
-                        title="Ubicación de la propiedad"
-                      />
-                    </div>
+                    <MapEmbed
+                      query={`${property.latitude},${property.longitude}`}
+                      title="Ubicación de la propiedad"
+                      label={[property.neighborhood, property.locality].filter(Boolean).join(", ")}
+                      className="aspect-square rounded-lg"
+                    />
                   </CardContent>
                 </Card>
               )}

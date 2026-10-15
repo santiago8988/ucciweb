@@ -61,14 +61,17 @@ export function ImageGallery({ images }: { images: GalleryImage[] }) {
             transition={{ duration: 0.3 }}
             className="absolute inset-0"
           >
-            {/* Blurred backdrop — fills the frame so verticals don't leave empty bars */}
+            {/* Blurred backdrop — fills the frame so verticals don't leave empty bars.
+                A 64px thumbnail is enough once blurred; being upscaled it doesn't
+                compete as the LCP element with the real photo below. */}
             <Image
               src={images[currentIndex].imageUrl}
               alt=""
               fill
               aria-hidden
+              loading="eager"
               className="object-cover scale-110 blur-2xl opacity-60"
-              sizes="(max-width: 1024px) 100vw, 66vw"
+              sizes="64px"
             />
             {/* Actual image — full photo, no crop */}
             <Image
