@@ -136,6 +136,7 @@ export default async function PropiedadesPage({
     minTotalSurface: minTotal,
     maxTotalSurface: maxTotal,
     q: first(params.q),
+    includeSold: first(params.vendidas) === "1",
     orderBy,
     page: parseInt32(first(params.page)) || 1,
   };

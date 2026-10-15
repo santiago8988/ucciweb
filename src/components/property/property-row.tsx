@@ -6,7 +6,8 @@ import { motion } from "framer-motion";
 import { MapPin, Bed, Bath, Maximize, Car, Home } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/property/favorite-button";
-import { operationTypeLabel, propertyTypeLabel } from "@/lib/constants";
+import { PROPERTY_STATUS_LABELS, operationTypeLabel, propertyTypeLabel } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import { formatCardSurface, formatLocation, PLACEHOLDER_IMAGE } from "@/lib/format";
 import type { PropertyCardData } from "@/lib/queries";
 
@@ -20,6 +21,11 @@ export function PropertyRow({
   const operationLabel = operationTypeLabel(property.operationType);
   const typeLabel = propertyTypeLabel(property.propertyType);
   const surface = formatCardSurface(property.coveredSurface, property.totalSurface);
+  // Reserved/sold/rented listings (reserved in search, sold via "Ver vendidas",
+  // any of them in favorites) are labeled; closed ones get a dimmed photo.
+  const statusLabel =
+    property.status !== "disponible" ? PROPERTY_STATUS_LABELS[property.status] ?? property.status : null;
+  const isClosed = property.status === "vendida" || property.status === "alquilada";
   // The first row is the LCP candidate: load it eagerly and don't fade it in.
   const isFirst = index === 0;
 
@@ -48,7 +54,7 @@ export function PropertyRow({
               src={property.imageUrl ?? PLACEHOLDER_IMAGE}
               alt={property.title}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className={cn("object-cover transition-transform duration-500 group-hover:scale-105", isClosed && "grayscale-[60%] opacity-80")}
               sizes="(max-width: 640px) 100vw, 288px"
               loading={isFirst ? "eager" : "lazy"}
               fetchPriority={isFirst ? "high" : "auto"}
@@ -64,9 +70,9 @@ export function PropertyRow({
                   Destacada
                 </Badge>
               )}
-              {property.status === "reservada" && (
+              {statusLabel && (
                 <Badge className="bg-ink text-white text-[11px] font-semibold uppercase tracking-[0.08em] shadow-md px-2.5">
-                  Reservada
+                  {statusLabel}
                 </Badge>
               )}
             </div>

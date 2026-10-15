@@ -2,7 +2,7 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { prisma } from "./prisma";
 import { ORGANIZATION_ID } from "./env";
-import { PropertyType, OperationType, Currency, Prisma } from "@/generated/prisma";
+import { PropertyType, OperationType, Currency, PropertyStatus, Prisma } from "@/generated/prisma";
 import { getPropertyPrice } from "./format";
 
 export type PropertyOrderBy = "recent" | "price_asc" | "price_desc";
@@ -24,6 +24,8 @@ export type PropertyFilters = {
   minTotalSurface?: number;
   maxTotalSurface?: number;
   q?: string;
+  /** "Ver vendidas": also list sold properties (after available/reserved). */
+  includeSold?: boolean;
   orderBy?: PropertyOrderBy;
   page?: number;
   pageSize?: number;
@@ -222,9 +224,13 @@ export async function getProperties(filters: PropertyFilters = {}) {
     minTotalSurface,
     maxTotalSurface,
     q,
+    includeSold = false,
     orderBy = "recent",
     pageSize = 12,
   } = filters;
+  const statuses: PropertyStatus[] = includeSold
+    ? [...LISTED_STATUSES, PropertyStatus.vendida]
+    : [...LISTED_STATUSES];
   const page = Math.min(Math.max(filters.page ?? 1, 1), MAX_PAGE);
 
   const expandedOps = expandOperations(operationTypes);
@@ -249,7 +255,7 @@ export async function getProperties(filters: PropertyFilters = {}) {
       SELECT id FROM properties
       WHERE organization_id = ${ORGANIZATION_ID}
         AND is_published = true
-        AND status IN ('disponible', 'reservada')
+        AND status::text = ANY(${statuses})
         AND amenities::text ILIKE ${"%" + pattern + "%"}
     `;
     if (rows.length > 0) {
@@ -259,6 +265,7 @@ export async function getProperties(filters: PropertyFilters = {}) {
 
   const where: Prisma.PropertyWhereInput = {
     ...PUBLIC_WHERE,
+    status: { in: statuses },
     ...(propertyTypes && propertyTypes.length > 0 && { propertyType: { in: propertyTypes } }),
     ...(expandedOps && { operationType: { in: expandedOps } }),
     ...(localities && localities.length > 0 && { locality: { in: localities } }),
@@ -278,12 +285,17 @@ export async function getProperties(filters: PropertyFilters = {}) {
     operationTypes?.length === 1 && operationTypes[0] === OperationType.alquiler;
   const priceField = onlyRentals ? "rentPrice" : "salePrice";
   const direction = orderBy === "price_desc" ? "desc" : "asc";
-  const orderByClause: Prisma.PropertyOrderByWithRelationInput[] =
+  const sortOrder: Prisma.PropertyOrderByWithRelationInput[] =
     orderBy === "recent"
       ? [{ createdAt: "desc" }]
       : onlyRentals
         ? [{ [priceField]: { sort: direction, nulls: "last" } }]
         : [{ hideSalePrice: "asc" }, { [priceField]: { sort: direction, nulls: "last" } }];
+  // With sold listings included they go last (enum order: disponible,
+  // reservada, vendida…), so the first results are still buyable.
+  const orderByClause: Prisma.PropertyOrderByWithRelationInput[] = includeSold
+    ? [{ status: "asc" }, ...sortOrder]
+    : sortOrder;
 
   const [rows, total] = await Promise.all([
     prisma.property.findMany({

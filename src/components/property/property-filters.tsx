@@ -33,6 +33,7 @@ const PARAM = {
   tmin: "tmin",
   tmax: "tmax",
   q: "q",
+  vendidas: "vendidas",
 } as const;
 
 // Single choice: "Todas" clears the param.
@@ -326,6 +327,20 @@ export function PropertyFilters({
           placeholderMax="Máx."
           commit={commit}
         />
+      </FilterSection>
+
+      {/* Estado — sold listings are hidden unless asked for */}
+      <FilterSection title="Estado">
+        <ChipRow>
+          <Chip
+            active={optimisticParams.get(PARAM.vendidas) === "1"}
+            onClick={() =>
+              setSingle(PARAM.vendidas, optimisticParams.get(PARAM.vendidas) === "1" ? null : "1")
+            }
+          >
+            Ver vendidas
+          </Chip>
+        </ChipRow>
       </FilterSection>
 
       {/* Características (free text) */}
