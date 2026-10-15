@@ -38,8 +38,11 @@ import {
 import { toEmbedUrl } from "@/lib/video";
 import { MobileContactBar } from "@/components/property/mobile-contact-bar";
 import { MapEmbed } from "@/components/map-embed";
+import { JsonLd } from "@/components/json-ld";
+import { breadcrumbJsonLd, listingJsonLd } from "@/lib/structured-data";
 
-export const revalidate = 60;
+// Fallback only: /api/revalidate expires the "properties" tag when data changes.
+export const revalidate = 300;
 
 // Required for ISR on a dynamic route in Next 16: an empty list means no page is
 // prebuilt, each one is rendered on first visit and then cached for `revalidate`.
@@ -55,6 +58,30 @@ type PageProps = {
 // hundred KB instead of the multi-MB original (WhatsApp previews).
 function ogImageUrl(imageUrl: string): string {
   return `/_next/image?url=${encodeURIComponent(imageUrl)}&w=1200&q=75`;
+}
+
+// Search-result title from the listing's data ("Chalet en venta en Los Troncos ·
+// 5 amb. · 430 m²"); the agent's long title stays as H1 and og:title.
+function seoTitle(p: {
+  propertyType: string;
+  operationType: string;
+  neighborhood: string | null;
+  locality: string;
+  hideLocation: boolean;
+  rooms: number | null;
+  coveredSurface: unknown;
+  totalSurface: unknown;
+}) {
+  const place = p.hideLocation ? p.locality : p.neighborhood || p.locality;
+  const op = OPERATION_TYPE_PHRASES[p.operationType as OperationTypeValue] ?? "";
+  const m2 = Number(p.coveredSurface ?? p.totalSurface) || null;
+  return [
+    `${propertyTypeLabel(p.propertyType)} ${op} en ${place}`,
+    p.rooms ? `${p.rooms} amb.` : null,
+    m2 ? `${Math.round(m2)} m²` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -76,7 +103,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const path = `/propiedades/${property.id}`;
 
   return {
-    title: property.title,
+    title: seoTitle(property),
     description,
     alternates: { canonical: path },
     openGraph: {
@@ -129,7 +156,15 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   const statusLabel = isAvailable ? null : PROPERTY_STATUS_LABELS[property.status] ?? property.status;
   const isClosed = property.status === "vendida" || property.status === "alquilada";
 
-  const similar = await getSimilarProperties(prop);
+  const similar = await getSimilarProperties({
+    id: property.id,
+    propertyType: property.propertyType,
+    operationType: property.operationType,
+    neighborhood: property.neighborhood,
+    locality: property.locality,
+    salePrice: prop.salePrice,
+    rentPrice: prop.rentPrice,
+  });
 
   // Always use the agent's celular for both WhatsApp and call when available.
   // Fall back: agent.phone, then department channels.
@@ -155,6 +190,16 @@ export default async function PropertyDetailPage({ params }: PageProps) {
 
   return (
     <div className="pt-24 pb-28 lg:pb-16">
+      <JsonLd
+        data={[
+          listingJsonLd(prop),
+          breadcrumbJsonLd([
+            { name: "Inicio", path: "/" },
+            { name: "Propiedades", path: "/propiedades" },
+            { name: property.title, path: `/propiedades/${property.id}` },
+          ]),
+        ]}
+      />
       <div className="content-wrap">
         {/* Back to the last search (filters included) */}
         <BackToListing className="mb-4" />

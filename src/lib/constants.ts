@@ -75,6 +75,8 @@ export const OFFICE = {
   city: "Mar del Plata, Buenos Aires",
   email: "info@uccipropiedades.com",
   mainPhone: { display: "223 451-2205", tel: "+542234512205" },
+  // Main WhatsApp line (footer, /contacto, /nosotros). Single source of truth.
+  whatsapp: { display: "+54 9 223 537-5248", waNumber: "5492235375248", tel: "+5492235375248" },
   instagram: "https://www.instagram.com/uccipropiedades/",
   facebook: "https://www.facebook.com/p/UCCI-propiedades-100063504282280/",
   mapsUrl: "https://www.google.com/maps/search/?api=1&query=UCCI+Propiedades+Mar+del+Plata",

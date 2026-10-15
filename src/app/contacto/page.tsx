@@ -18,6 +18,7 @@ import {
 import { MapEmbed } from "@/components/map-embed";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/contacto" },
   title: "Contacto",
   description:
     "Comunicate con UCCI Propiedades por teléfono o WhatsApp. Alquileres, alquiler temporario y compra/venta en Mar del Plata.",
@@ -65,9 +66,9 @@ export default function ContactoPage() {
             <InfoCard
               icon={Phone}
               title="Teléfono"
-              primary="+54 9 223 537-5248"
+              primary={OFFICE.whatsapp.display}
               secondary="Lunes a viernes, 9 a 18hs"
-              href={buildTelUrl("+5492235375248")}
+              href={buildTelUrl(OFFICE.whatsapp.tel)}
             />
             <InfoCard
               icon={Mail}

@@ -23,11 +23,19 @@ import {
 } from "@/lib/constants";
 import { formatPrice } from "@/lib/format";
 
-export const metadata: Metadata = {
-  title: "Propiedades",
-  description:
-    "Explorá todas las propiedades disponibles en UCCI Propiedades. Casas, departamentos, terrenos y más.",
-};
+// Every filter combination is its own URL with the same content: they all
+// point to /propiedades as canonical and aren't indexed (links still followed).
+export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
+  const params = await searchParams;
+  const filtered = Object.keys(params).length > 0;
+  return {
+    title: "Propiedades en venta y alquiler en Mar del Plata",
+    description:
+      "Explorá todas las propiedades disponibles en UCCI Propiedades. Casas, departamentos, terrenos y más en Mar del Plata.",
+    alternates: { canonical: "/propiedades" },
+    ...(filtered && { robots: { index: false, follow: true } }),
+  };
+}
 
 export const revalidate = 60;
 

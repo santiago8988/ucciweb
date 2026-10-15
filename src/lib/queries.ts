@@ -36,6 +36,12 @@ export const MAX_QUERY_LENGTH = 80;
 export const MAX_PAGE = 500;
 export const MAX_FAVORITE_IDS = 50;
 
+// Every public read is cached under one tag. /api/revalidate (called by a
+// Supabase Database Webhook when an agent edits a listing) expires it at once;
+// the time-based revalidate is only a fallback if a webhook is missed.
+export const PROPERTIES_CACHE_TAG = "properties";
+const CACHE = { revalidate: 300, tags: [PROPERTIES_CACHE_TAG] };
+
 // Listed on the site: available and reserved (reserved ones show a badge).
 // Sold/rented listings are only reachable by direct link (with a notice).
 export const LISTED_STATUSES = ["disponible", "reservada"] as const;
@@ -149,15 +155,19 @@ function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, "\\$&");
 }
 
-export async function getFeaturedProperties(): Promise<PropertyCardData[]> {
-  const rows = await prisma.property.findMany({
-    where: { ...PUBLIC_WHERE, featured: true },
-    select: CARD_SELECT,
-    take: 6,
-    orderBy: { createdAt: "desc" },
-  });
-  return rows.map(toCard);
-}
+export const getFeaturedProperties = unstable_cache(
+  async (): Promise<PropertyCardData[]> => {
+    const rows = await prisma.property.findMany({
+      where: { ...PUBLIC_WHERE, featured: true },
+      select: CARD_SELECT,
+      take: 6,
+      orderBy: { createdAt: "desc" },
+    });
+    return rows.map(toCard);
+  },
+  ["featured-properties"],
+  CACHE
+);
 
 // When a user picks "venta" or "alquiler", properties marked as venta_alquiler
 // (both) should also match — they satisfy either operation.
@@ -206,7 +216,7 @@ function rangeOf(min?: number, max?: number) {
   };
 }
 
-export async function getProperties(filters: PropertyFilters = {}) {
+async function queryProperties(filters: PropertyFilters = {}) {
   const {
     propertyTypes,
     operationTypes,
@@ -316,32 +326,44 @@ export async function getProperties(filters: PropertyFilters = {}) {
   };
 }
 
-// Deduplicated per request: generateMetadata and the page share one fetch.
-export const getPropertyById = cache(async (id: string) => {
-  const result = await prisma.property.findFirst({
-    where: {
-      id,
-      organizationId: ORGANIZATION_ID,
-      isPublished: true,
+// Cached per filter combination (the filters object is part of the cache key).
+export const getProperties = unstable_cache(queryProperties, ["properties-list"], CACHE);
+
+// Data cache across requests + React cache so generateMetadata and the page
+// share one call within a render.
+export const getPropertyById = cache(
+  unstable_cache(
+    async (id: string) => {
+      const result = await prisma.property.findFirst({
+        where: {
+          id,
+          organizationId: ORGANIZATION_ID,
+          isPublished: true,
+        },
+        include: INCLUDE_PROPERTY,
+      });
+      return result ? serialize(result) : null;
     },
-    include: INCLUDE_PROPERTY,
-  });
-  return result ? serialize(result) : null;
-});
+    ["property-by-id"],
+    CACHE
+  )
+);
 
 // Up to `limit` available listings resembling the given one: same operation
 // (venta_alquiler counts for both), scored by type, neighborhood/locality and
 // price within ±30%. Prices are only used server-side for scoring.
-export async function getSimilarProperties(
-  property: {
-    id: string;
-    propertyType: string;
-    operationType: string;
-    neighborhood: string | null;
-    locality: string;
-    salePrice: unknown;
-    rentPrice: unknown;
-  },
+export type SimilarReference = {
+  id: string;
+  propertyType: string;
+  operationType: string;
+  neighborhood: string | null;
+  locality: string;
+  salePrice: string | number | null;
+  rentPrice: string | number | null;
+};
+
+async function querySimilarProperties(
+  property: SimilarReference,
   limit = 3
 ): Promise<PropertyCardData[]> {
   const ops: OperationType[] =
@@ -374,13 +396,18 @@ export async function getSimilarProperties(
     .map(({ row }) => toCard(row));
 }
 
-export async function getPublishedPropertyIds() {
-  const rows = await prisma.property.findMany({
-    where: PUBLIC_WHERE,
-    select: { id: true, updatedAt: true },
-  });
-  return rows;
-}
+// Pass only the reference fields (they form the cache key).
+export const getSimilarProperties = unstable_cache(querySimilarProperties, ["similar-properties"], CACHE);
+
+export const getPublishedPropertyIds = unstable_cache(
+  async () =>
+    prisma.property.findMany({
+      where: PUBLIC_WHERE,
+      select: { id: true, updatedAt: true },
+    }),
+  ["published-property-ids"],
+  CACHE
+);
 
 export const getLocalities = unstable_cache(
   async () => {
@@ -392,7 +419,7 @@ export const getLocalities = unstable_cache(
     return result.map((r) => r.locality);
   },
   ["localities"],
-  { revalidate: 300, tags: ["properties"] }
+  CACHE
 );
 
 export const getNeighborhoods = unstable_cache(
@@ -407,7 +434,7 @@ export const getNeighborhoods = unstable_cache(
       .filter((n): n is string => Boolean(n));
   },
   ["neighborhoods"],
-  { revalidate: 300, tags: ["properties"] }
+  CACHE
 );
 
 export async function getPropertiesByIds(ids: string[]): Promise<PropertyCardData[]> {
@@ -424,9 +451,11 @@ export async function getPropertiesByIds(ids: string[]): Promise<PropertyCardDat
   return rows.map(toCard);
 }
 
-export async function getPropertyCount() {
-  return prisma.property.count({ where: AVAILABLE_WHERE });
-}
+export const getPropertyCount = unstable_cache(
+  async () => prisma.property.count({ where: AVAILABLE_WHERE }),
+  ["available-count"],
+  CACHE
+);
 
 export const getRentalCount = unstable_cache(
   async () =>
@@ -437,5 +466,5 @@ export const getRentalCount = unstable_cache(
       },
     }),
   ["rental-count"],
-  { revalidate: 300, tags: ["properties"] }
+  CACHE
 );

@@ -5,6 +5,10 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
 import { Analytics } from "@/components/analytics";
+import { MotionProvider } from "@/components/motion-provider";
+import { JsonLd } from "@/components/json-ld";
+import { agencyJsonLd } from "@/lib/structured-data";
+import logo from "@/assets/logo-ucci.png";
 
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
@@ -60,10 +64,13 @@ export default function RootLayout({
       className={`${sourceSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-white text-ink">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <MotionProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </MotionProvider>
         <Analytics />
+        <JsonLd data={agencyJsonLd(logo.src)} />
       </body>
     </html>
   );

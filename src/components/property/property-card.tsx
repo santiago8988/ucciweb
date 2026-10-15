@@ -6,7 +6,8 @@ import { motion } from "framer-motion";
 import { MapPin, Bed, Bath, Maximize, Car } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/property/favorite-button";
-import { PROPERTY_STATUS_LABELS, operationTypeLabel, propertyTypeLabel } from "@/lib/constants";
+import { propertyTypeLabel } from "@/lib/constants";
+import { CardBadges, isClosedStatus } from "@/components/property/card-badges";
 import { cn } from "@/lib/utils";
 import { formatCardSurface, formatLocation, PLACEHOLDER_IMAGE } from "@/lib/format";
 import type { PropertyCardData } from "@/lib/queries";
@@ -18,14 +19,10 @@ export function PropertyCard({
   property: PropertyCardData;
   index?: number;
 }) {
-  const operationLabel = operationTypeLabel(property.operationType);
   const typeLabel = propertyTypeLabel(property.propertyType);
   const surface = formatCardSurface(property.coveredSurface, property.totalSurface);
-  // Reserved/sold/rented listings (reserved in search, sold via "Ver vendidas",
-  // any of them in favorites) are labeled; closed ones get a dimmed photo.
-  const statusLabel =
-    property.status !== "disponible" ? PROPERTY_STATUS_LABELS[property.status] ?? property.status : null;
-  const isClosed = property.status === "vendida" || property.status === "alquilada";
+  // Sold/rented listings (via "Ver vendidas" or favorites) get a dimmed photo.
+  const isClosed = isClosedStatus(property.status);
 
   const features = [
     property.bedrooms != null && { icon: Bed, value: property.bedrooms },
@@ -55,22 +52,12 @@ export function PropertyCard({
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-            {/* Badges — top left */}
-            <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-              <Badge className="bg-white text-ink text-[11px] font-semibold uppercase tracking-[0.08em] shadow-md px-2.5">
-                {operationLabel}
-              </Badge>
-              {property.featured && (
-                <Badge className="bg-[#ED1B24] text-white text-[11px] font-semibold uppercase tracking-[0.08em] shadow-md px-2.5">
-                  Destacada
-                </Badge>
-              )}
-              {statusLabel && (
-                <Badge className="bg-ink text-white text-[11px] font-semibold uppercase tracking-[0.08em] shadow-md px-2.5">
-                  {statusLabel}
-                </Badge>
-              )}
-            </div>
+            {/* Operation / featured / status badges — top left */}
+            <CardBadges
+              operationType={property.operationType}
+              featured={property.featured}
+              status={property.status}
+            />
 
             {/* Type badge + favorite — top right */}
             <div className="absolute top-3 right-3 flex items-center gap-2">
