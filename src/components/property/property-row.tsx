@@ -55,13 +55,18 @@ export function PropertyRow({
             />
 
             {/* Operation badge — top left */}
-            <div className="absolute top-3 left-3 flex gap-2">
+            <div className="absolute top-3 left-3 flex flex-wrap gap-2">
               <Badge className="bg-white text-ink text-[11px] font-semibold shadow-md uppercase tracking-[0.08em] px-2.5">
                 {operationLabel}
               </Badge>
               {property.featured && (
                 <Badge className="bg-[#ED1B24] text-white text-[11px] font-semibold shadow-md uppercase tracking-[0.08em] px-2.5">
                   Destacada
+                </Badge>
+              )}
+              {property.status === "reservada" && (
+                <Badge className="bg-ink text-white text-[11px] font-semibold uppercase tracking-[0.08em] shadow-md px-2.5">
+                  Reservada
                 </Badge>
               )}
             </div>

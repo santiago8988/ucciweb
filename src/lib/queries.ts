@@ -34,7 +34,18 @@ export const MAX_QUERY_LENGTH = 80;
 export const MAX_PAGE = 500;
 export const MAX_FAVORITE_IDS = 50;
 
+// Listed on the site: available and reserved (reserved ones show a badge).
+// Sold/rented listings are only reachable by direct link (with a notice).
+export const LISTED_STATUSES = ["disponible", "reservada"] as const;
+
 const PUBLIC_WHERE = {
+  organizationId: ORGANIZATION_ID,
+  isPublished: true,
+  status: { in: [...LISTED_STATUSES] },
+} satisfies Prisma.PropertyWhereInput;
+
+// Strictly available, for copy that says "disponibles".
+const AVAILABLE_WHERE = {
   organizationId: ORGANIZATION_ID,
   isPublished: true,
   status: "disponible",
@@ -59,6 +70,7 @@ const CARD_SELECT = {
   currency: true,
   hideSalePrice: true,
   featured: true,
+  status: true,
   rooms: true,
   bedrooms: true,
   bathrooms: true,
@@ -84,6 +96,7 @@ export type PropertyCardData = {
   operationType: string;
   priceText: string;
   featured: boolean;
+  status: string;
   rooms: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
@@ -112,6 +125,7 @@ function toCard(row: CardRow): PropertyCardData {
       hideSalePrice: row.hideSalePrice,
     }),
     featured: row.featured,
+    status: row.status,
     rooms: row.rooms,
     bedrooms: row.bedrooms,
     bathrooms: row.bathrooms,
@@ -235,7 +249,7 @@ export async function getProperties(filters: PropertyFilters = {}) {
       SELECT id FROM properties
       WHERE organization_id = ${ORGANIZATION_ID}
         AND is_published = true
-        AND status = 'disponible'
+        AND status IN ('disponible', 'reservada')
         AND amenities::text ILIKE ${"%" + pattern + "%"}
     `;
     if (rows.length > 0) {
@@ -303,6 +317,51 @@ export const getPropertyById = cache(async (id: string) => {
   return result ? serialize(result) : null;
 });
 
+// Up to `limit` available listings resembling the given one: same operation
+// (venta_alquiler counts for both), scored by type, neighborhood/locality and
+// price within ±30%. Prices are only used server-side for scoring.
+export async function getSimilarProperties(
+  property: {
+    id: string;
+    propertyType: string;
+    operationType: string;
+    neighborhood: string | null;
+    locality: string;
+    salePrice: unknown;
+    rentPrice: unknown;
+  },
+  limit = 3
+): Promise<PropertyCardData[]> {
+  const ops: OperationType[] =
+    property.operationType === OperationType.venta_alquiler
+      ? [OperationType.venta, OperationType.alquiler, OperationType.venta_alquiler]
+      : [property.operationType as OperationType, OperationType.venta_alquiler];
+
+  const candidates = await prisma.property.findMany({
+    where: { ...PUBLIC_WHERE, id: { not: property.id }, operationType: { in: ops } },
+    select: CARD_SELECT,
+    orderBy: { createdAt: "desc" },
+    take: 60,
+  });
+
+  const refPrice = Number(property.salePrice ?? property.rentPrice ?? 0) || null;
+  const score = (row: CardRow) => {
+    let s = 0;
+    if (row.propertyType === property.propertyType) s += 3;
+    if (property.neighborhood && row.neighborhood === property.neighborhood) s += 2;
+    else if (row.locality === property.locality) s += 1;
+    const price = toNumber(row.salePrice) ?? toNumber(row.rentPrice);
+    if (refPrice && price && Math.abs(price - refPrice) / refPrice <= 0.3) s += 2;
+    return s;
+  };
+
+  return candidates
+    .map((row) => ({ row, s: score(row) }))
+    .sort((a, b) => b.s - a.s)
+    .slice(0, limit)
+    .map(({ row }) => toCard(row));
+}
+
 export async function getPublishedPropertyIds() {
   const rows = await prisma.property.findMany({
     where: PUBLIC_WHERE,
@@ -354,7 +413,7 @@ export async function getPropertiesByIds(ids: string[]): Promise<PropertyCardDat
 }
 
 export async function getPropertyCount() {
-  return prisma.property.count({ where: PUBLIC_WHERE });
+  return prisma.property.count({ where: AVAILABLE_WHERE });
 }
 
 export const getRentalCount = unstable_cache(

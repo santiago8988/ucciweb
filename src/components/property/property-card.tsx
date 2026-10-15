@@ -50,13 +50,18 @@ export function PropertyCard({
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
             {/* Badges — top left */}
-            <div className="absolute top-3 left-3 flex gap-2">
+            <div className="absolute top-3 left-3 flex flex-wrap gap-2">
               <Badge className="bg-white text-ink text-[11px] font-semibold uppercase tracking-[0.08em] shadow-md px-2.5">
                 {operationLabel}
               </Badge>
               {property.featured && (
                 <Badge className="bg-[#ED1B24] text-white text-[11px] font-semibold uppercase tracking-[0.08em] shadow-md px-2.5">
                   Destacada
+                </Badge>
+              )}
+              {property.status === "reservada" && (
+                <Badge className="bg-ink text-white text-[11px] font-semibold uppercase tracking-[0.08em] shadow-md px-2.5">
+                  Reservada
                 </Badge>
               )}
             </div>

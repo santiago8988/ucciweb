@@ -4,19 +4,24 @@ import Link from "next/link";
 import { Search, MessageCircle } from "lucide-react";
 import { buttonVariants } from "@/lib/button-variants";
 import { cn } from "@/lib/utils";
-import { getProperties, getLocalities, getNeighborhoods, type PropertyFilters as DBFilters, type PropertyOrderBy } from "@/lib/queries";
+import { getProperties, getLocalities, getNeighborhoods, getRentalCount, type PropertyFilters as DBFilters, type PropertyOrderBy } from "@/lib/queries";
 import { PropertyRow } from "@/components/property/property-row";
 import { PropertyFilters } from "@/components/property/property-filters";
 import { MobileFilters } from "@/components/property/mobile-filters";
 import { SortSelect } from "@/components/property/sort-select";
 import { Pagination } from "@/components/property/pagination";
+import { ListingUrlRecorder } from "@/components/property/last-listing";
 import type { PropertyType, OperationType, Currency } from "@/generated/prisma";
 import {
   PROPERTY_TYPES,
   OPERATION_TYPES,
   RENTALS_WHATSAPP,
+  SALES_WHATSAPP,
+  OPERATION_TYPE_PHRASES,
   buildWhatsAppUrl,
+  propertyTypeLabel,
 } from "@/lib/constants";
+import { formatPrice } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Propiedades",
@@ -70,6 +75,24 @@ function orderedRange(a?: number, b?: number): [number | undefined, number | und
   return a != null && b != null && a > b ? [b, a] : [a, b];
 }
 
+// Human summary of the search for the "avisame" WhatsApp message.
+function describeSearch(f: DBFilters): string {
+  const parts: string[] = [];
+  const types = f.propertyTypes?.map((t) => propertyTypeLabel(t).toLowerCase());
+  parts.push(types?.length ? types.join(" o ") : "una propiedad");
+  const op = f.operationTypes?.[0];
+  if (op) parts.push(OPERATION_TYPE_PHRASES[op]);
+  const places = [...(f.neighborhoods ?? []), ...(f.localities ?? [])];
+  if (places.length) parts.push(`en ${places.join(" o ")}`);
+  if (f.minRooms) parts.push(`de ${f.minRooms}+ ambientes`);
+  if (f.currency && (f.minPrice != null || f.maxPrice != null)) {
+    if (f.minPrice != null) parts.push(`desde ${formatPrice(f.minPrice, f.currency)}`);
+    if (f.maxPrice != null) parts.push(`hasta ${formatPrice(f.maxPrice, f.currency)}`);
+  }
+  if (f.q) parts.push(`con "${f.q}"`);
+  return parts.join(" ");
+}
+
 const SORT_VALUES: PropertyOrderBy[] = ["recent", "price_asc", "price_desc"];
 
 export default async function PropiedadesPage({
@@ -118,12 +141,15 @@ export default async function PropiedadesPage({
   };
 
   const wantsRentals = filters.operationTypes?.includes("alquiler") ?? false;
+  const hasFilters = Object.keys(params).some((k) => k !== "sort" && k !== "page");
 
-  const [result, localities, neighborhoods] = await Promise.all([
+  const [result, localities, neighborhoods, rentalCount] = await Promise.all([
     getProperties(filters),
     getLocalities(),
     getNeighborhoods(),
+    getRentalCount(),
   ]);
+  const noRentalsPublished = wantsRentals && rentalCount === 0;
 
   return (
     <div className="pt-20 bg-gray-50/60 min-h-screen">
@@ -142,11 +168,14 @@ export default async function PropiedadesPage({
             <h1 id="listado-titulo" className="sr-only">
               Propiedades en venta y alquiler
             </h1>
+            <Suspense>
+              <ListingUrlRecorder />
+            </Suspense>
             {/* Top bar — wraps on narrow phones instead of overflowing */}
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <Suspense>
-                  <MobileFilters localities={localities} neighborhoods={neighborhoods} />
+                  <MobileFilters localities={localities} neighborhoods={neighborhoods} total={result.total} />
                 </Suspense>
                 <p className="text-sm text-ink/70 whitespace-nowrap">
                   <span className="font-semibold text-ink">{result.total}</span>{" "}
@@ -175,39 +204,36 @@ export default async function PropiedadesPage({
                   <Search className="h-7 w-7 text-gray-400" />
                 </div>
                 <p className="text-xl font-medium text-ink">No se encontraron propiedades</p>
-                {wantsRentals ? (
-                  <>
-                    <p className="mt-2 text-sm text-ink/70 max-w-sm mx-auto">
-                      Por ahora no tenemos alquileres publicados en la web, pero nuestro
-                      equipo de alquileres puede ayudarte con opciones disponibles.
-                    </p>
-                    <a
-                      href={buildWhatsAppUrl(
-                        RENTALS_WHATSAPP,
-                        "Hola UCCI Propiedades, estoy buscando una propiedad en alquiler."
-                      )}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={cn(
-                        buttonVariants(),
-                        "mt-6 bg-brand text-black hover:bg-brand-dark hover:text-white"
-                      )}
-                    >
-                      <MessageCircle className="mr-2 h-4 w-4" />
-                      Consultar alquileres por WhatsApp
-                    </a>
-                  </>
-                ) : (
-                  <p className="mt-2 text-sm text-ink/70 max-w-sm mx-auto">
-                    Intentá con otros filtros de búsqueda o explorá todas las propiedades disponibles.
-                  </p>
-                )}
+                <p className="mt-2 text-sm text-ink/70 max-w-sm mx-auto">
+                  {noRentalsPublished
+                    ? "Por ahora no tenemos alquileres publicados en la web, pero nuestro equipo de alquileres puede ayudarte con opciones disponibles."
+                    : "Probá con otros filtros, o contanos qué buscás y te avisamos cuando ingrese algo así."}
+                </p>
+                <a
+                  href={buildWhatsAppUrl(
+                    wantsRentals ? RENTALS_WHATSAPP : SALES_WHATSAPP,
+                    noRentalsPublished
+                      ? "Hola UCCI Propiedades, estoy buscando una propiedad en alquiler."
+                      : `Hola UCCI Propiedades, busco ${describeSearch(filters)}. ¿Me avisan si ingresa algo así?`
+                  )}
+                  data-track="whatsapp"
+                  data-property-code="sin-resultados"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    buttonVariants(),
+                    "mt-6 bg-brand text-black hover:bg-brand-dark hover:text-white"
+                  )}
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  {noRentalsPublished ? "Consultar alquileres por WhatsApp" : "Avisame por WhatsApp"}
+                </a>
                 <div className="mt-4">
                   <Link
                     href="/propiedades"
                     className="text-sm font-medium text-ink underline underline-offset-4 hover:text-brand-dark"
                   >
-                    Ver todas las propiedades
+                    {hasFilters ? "Limpiar filtros" : "Ver todas las propiedades"}
                   </Link>
                 </div>
               </div>

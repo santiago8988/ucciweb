@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import {
   MapPin, Bed, Bath, Maximize, Car, Calendar, Compass,
-  Flame, ArrowLeft, Phone, Building, MessageCircle,
-  CalendarClock,
+  Flame, Phone, Building, MessageCircle,
+  CalendarClock, CircleAlert,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/lib/button-variants";
@@ -14,10 +13,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ImageGallery } from "@/components/property/image-gallery";
 import { FavoriteButton } from "@/components/property/favorite-button";
-import { getPropertyById } from "@/lib/queries";
+import { getPropertyById, getSimilarProperties } from "@/lib/queries";
+import { PropertyCard } from "@/components/property/property-card";
+import { ShareButton } from "@/components/property/share-button";
+import { BackToListing } from "@/components/property/last-listing";
 import {
   OPERATION_TYPE_PHRASES,
+  PROPERTY_STATUS_LABELS,
   SITE_NAME,
+  SITE_URL,
   CONTACT_DEPARTMENTS,
   buildWhatsAppUrl,
   buildTelUrl,
@@ -114,9 +118,18 @@ export default async function PropertyDetailPage({ params }: PageProps) {
       : CONTACT_DEPARTMENTS.find((d) => d.id === "alquileres");
   const waChannel = defaultDept?.channels.find((c) => c.kind === "whatsapp");
   const telChannel = defaultDept?.channels.find((c) => c.kind === "phone");
+  const pageUrl = `${SITE_URL}/propiedades/${property.id}`;
+  // The link lets the agent open the exact listing from the chat.
   const waMessage = `Hola UCCI Propiedades, me interesa la propiedad "${property.title}"${
     property.internalCode ? ` (cód. ${property.internalCode})` : ""
-  }.`;
+  }: ${pageUrl}`;
+
+  // Old links shared on WhatsApp can point to listings that are no longer available.
+  const isAvailable = property.status === "disponible";
+  const statusLabel = isAvailable ? null : PROPERTY_STATUS_LABELS[property.status] ?? property.status;
+  const isClosed = property.status === "vendida" || property.status === "alquilada";
+
+  const similar = await getSimilarProperties(prop);
 
   // Always use the agent's celular for both WhatsApp and call when available.
   // Fall back: agent.phone, then department channels.
@@ -143,14 +156,8 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   return (
     <div className="pt-24 pb-28 lg:pb-16">
       <div className="content-wrap">
-        {/* Back */}
-        <Link
-          href="/propiedades"
-          className={cn(buttonVariants({ variant: "ghost" }), "mb-4")}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver a propiedades
-        </Link>
+        {/* Back to the last search (filters included) */}
+        <BackToListing className="mb-4" />
 
         {/* Explicit grid-cols-1 + min-w-0: otherwise the thumbnail strip's width
             stretches the implicit column far beyond the phone's viewport. */}
@@ -166,7 +173,21 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                 {property.internalCode && (
                   <Badge variant="outline">Código: {property.internalCode}</Badge>
                 )}
+                {statusLabel && (
+                  <Badge className="bg-ink text-white uppercase tracking-wider">{statusLabel}</Badge>
+                )}
               </div>
+
+              {!isAvailable && (
+                <div className="mb-4 flex items-start gap-3 rounded-xl border border-ink/15 bg-sand-soft/60 p-4 text-sm text-ink">
+                  <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  <p>
+                    {isClosed
+                      ? `Esta propiedad ya fue ${statusLabel?.toLowerCase()}. Mirá abajo opciones similares o escribinos y te ayudamos a encontrar otra.`
+                      : `Esta propiedad está ${statusLabel?.toLowerCase()}. Consultanos por su disponibilidad.`}
+                  </p>
+                </div>
+              )}
 
               <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{property.title}</h1>
               <p className="mt-1 flex items-center gap-1 text-gray-500">
@@ -202,7 +223,10 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                     </p>
                   )}
                 </div>
-                <FavoriteButton propertyId={property.id} variant="detail" />
+                <div className="flex flex-wrap items-center gap-2">
+                  <FavoriteButton propertyId={property.id} variant="detail" />
+                  <ShareButton url={pageUrl} title={property.title} />
+                </div>
               </div>
             </div>
 
@@ -313,10 +337,12 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                 <Card className="bg-brand-soft border-brand/30">
                   <CardContent className="p-6">
                     <h3 className="font-semibold text-ink mb-1">
-                      ¿Te interesa esta propiedad?
+                      {isClosed ? "¿Buscás algo parecido?" : "¿Te interesa esta propiedad?"}
                     </h3>
-                    <p className="text-sm text-ink/60 mb-5">
-                      Contactanos para más información o para agendar una visita.
+                    <p className="text-sm text-ink/70 mb-5">
+                      {isClosed
+                        ? "Contanos qué buscás y te avisamos cuando ingrese algo similar."
+                        : "Contactanos para más información o para agendar una visita."}
                     </p>
                     {property.agent && agentNumber && (
                       <div className="mb-4 flex items-center gap-3">
@@ -334,12 +360,17 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                           </div>
                         )}
                         <div className="min-w-0">
-                          <p className="text-[10px] uppercase tracking-widest text-ink/50">
+                          <p className="text-[11px] uppercase tracking-widest text-ink/60">
                             Te atiende
                           </p>
                           <p className="truncate text-sm font-semibold text-ink">
                             {property.agent.fullName}
                           </p>
+                          {property.agent.licenseNumber && (
+                            <p className="truncate text-xs text-ink/60">
+                              Matrícula {property.agent.licenseNumber}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}
@@ -378,50 +409,22 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                   </CardContent>
                 </Card>
               )}
-
-              {/* Agent card — name + matricula only */}
-              {property.agent && (
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="text-[11px] font-semibold uppercase tracking-widest text-ink/50 mb-4">
-                      Agente inmobiliario
-                    </h3>
-                    <div className="flex items-center gap-4">
-                      {property.agent.avatarUrl ? (
-                        <Image
-                          src={property.agent.avatarUrl}
-                          alt={property.agent.fullName}
-                          width={56}
-                          height={56}
-                          className="h-14 w-14 shrink-0 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-softer text-xl font-bold text-brand-dark">
-                          {property.agent.fullName.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold text-ink">
-                          {property.agent.fullName}
-                        </p>
-                        {property.agent.licenseNumber && (
-                          <p className="mt-0.5 truncate text-xs text-ink/50">
-                            Matrícula {property.agent.licenseNumber}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    {property.agent.bio && (
-                      <p className="mt-4 text-sm leading-relaxed text-ink/60">
-                        {property.agent.bio}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </div>
         </div>
+
+        {similar.length > 0 && (
+          <section className="mt-16" aria-labelledby="similares-titulo">
+            <h2 id="similares-titulo" className="mb-6 text-xl font-semibold text-ink sm:text-2xl">
+              Propiedades similares
+            </h2>
+            <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+              {similar.map((p, i) => (
+                <PropertyCard key={p.id} property={p} index={i} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       <MobileContactBar

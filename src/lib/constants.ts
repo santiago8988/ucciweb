@@ -134,6 +134,7 @@ function firstWhatsApp(departmentId: string): string {
 }
 
 export const RENTALS_WHATSAPP = firstWhatsApp("alquileres");
+export const SALES_WHATSAPP = firstWhatsApp("compra-venta");
 
 export function buildWhatsAppUrl(number: string, message?: string): string {
   const cleaned = number.replace(/\D/g, "");

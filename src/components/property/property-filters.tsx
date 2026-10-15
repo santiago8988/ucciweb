@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   useCallback,
+  useEffect,
   useMemo,
   useOptimistic,
   useRef,
@@ -61,13 +62,23 @@ function parseList(raw: string | null): string[] {
 export function PropertyFilters({
   localities,
   neighborhoods,
+  showTitle = true,
+  onPendingChange,
 }: {
   localities: string[];
   neighborhoods: string[];
+  /** The mobile sheet already has its own title. */
+  showTitle?: boolean;
+  /** Lets the mobile sheet show "Actualizando…" while results reload. */
+  onPendingChange?: (pending: boolean) => void;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    onPendingChange?.(isPending);
+  }, [isPending, onPendingChange]);
 
   // Optimistic URL query string — updated immediately on click so chips reflect
   // the new selection before the server finishes re-rendering the list.
@@ -144,17 +155,25 @@ export function PropertyFilters({
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between px-1 pb-3">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-ink inline-flex items-center gap-2">
-          Filtros
-          {isPending && (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-dark" />
-          )}
-        </h2>
+      <div
+        className={cn(
+          "flex items-center px-1 pb-3",
+          showTitle ? "justify-between" : "justify-end"
+        )}
+      >
+        {showTitle && (
+          <h2 className="text-sm font-bold uppercase tracking-widest text-ink inline-flex items-center gap-2">
+            Filtros
+            {isPending && (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-dark" />
+            )}
+          </h2>
+        )}
         {hasAnyFilter && (
           <button
+            type="button"
             onClick={clearAll}
-            className="text-[11px] font-medium uppercase tracking-wider text-ink/50 hover:text-ink transition-colors inline-flex items-center gap-1"
+            className="text-[11px] font-medium uppercase tracking-wider text-ink/70 hover:text-ink transition-colors inline-flex items-center gap-1"
           >
             <X className="h-3 w-3" />
             Limpiar
