@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/property/favorite-button";
 import { propertyTypeLabel } from "@/lib/constants";
 import { CardBadges, isClosedStatus } from "@/components/property/card-badges";
+import { rememberListingUrl } from "@/components/property/last-listing";
 import { cn } from "@/lib/utils";
 import { formatCardSurface, formatLocation, PLACEHOLDER_IMAGE } from "@/lib/format";
 import type { PropertyCardData } from "@/lib/queries";
@@ -38,7 +39,7 @@ export function PropertyCard({
       transition={{ duration: 0.5, delay: index * 0.08 }}
       viewport={{ once: true }}
     >
-      <Link href={`/propiedades/${property.id}`} className="group block">
+      <Link href={`/propiedades/${property.id}`} onClick={rememberListingUrl} className="group block">
         <article className="overflow-hidden rounded-xl bg-white shadow-sm border border-gray-100 transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 group-active:scale-[0.98] group-active:shadow-md">
           {/* Image — 3:2 aspect like Engel & Völkers */}
           <div className="relative aspect-[3/2] overflow-hidden">

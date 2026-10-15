@@ -37,7 +37,7 @@ SELECT
   -38.0 - (g % 50) / 1000.0, -57.55 - (g % 50) / 1000.0,
   1 + g % 6, g % 5, 1 + g % 3, 50 + g * 3, 40 + g * 2, st::"PropertyStatus",
   g % 23 <> 0, g % 9 = 0, g % 13 = 0, g % 19 = 0,
-  to_jsonb(ARRAY['pileta','parrilla','cochera cubierta'][1:1 + g % 3]),
+  to_jsonb((ARRAY['pileta','parrilla','cochera cubierta'])[1:1 + g % 3]),
   CASE WHEN org = 'ucci-org' AND g % 4 = 0 THEN 'agent-' || (1 + g % 3) END,
   now() - (g || ' days')::interval, now(), now() - (g || ' days')::interval
 FROM base;

@@ -7,6 +7,7 @@ import { MapPin, Bed, Bath, Maximize, Car, Home } from "lucide-react";
 import { FavoriteButton } from "@/components/property/favorite-button";
 import { propertyTypeLabel } from "@/lib/constants";
 import { CardBadges, isClosedStatus } from "@/components/property/card-badges";
+import { rememberListingUrl } from "@/components/property/last-listing";
 import { cn } from "@/lib/utils";
 import { formatCardSurface, formatLocation, PLACEHOLDER_IMAGE } from "@/lib/format";
 import type { PropertyCardData } from "@/lib/queries";
@@ -41,6 +42,7 @@ export function PropertyRow({
     >
       <Link
         href={`/propiedades/${property.id}`}
+        onClick={rememberListingUrl}
         className="group block overflow-hidden rounded-xl border border-gray-100 bg-white transition-all duration-300 hover:shadow-lg hover:border-gray-200"
       >
         <article className="flex flex-col sm:flex-row">

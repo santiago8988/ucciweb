@@ -23,7 +23,23 @@ test.describe("SEO", () => {
     expect(types).toEqual(expect.arrayContaining(["RealEstateAgent", "RealEstateListing", "BreadcrumbList"]));
     const listing = blocks.find((b) => b["@type"] === "RealEstateListing");
     expect(listing.url).toContain(`/propiedades/${id}`);
-    if (html.includes("Consultar valor")) expect(listing.offers.price).toBeUndefined();
+  });
+
+  test("precio oculto: no aparece en el JSON-LD ni en el HTML", async ({ request }) => {
+    const list = await (await request.get("/propiedades")).text();
+    const cards = list.split(/href="\/propiedades\/(?=[0-9a-f-]{36}")/).slice(1);
+    const card = cards.find((c) => c.slice(0, c.indexOf("</article>")).includes("Consultar valor"));
+    test.skip(!card, "no hay propiedades con precio oculto");
+    const id = card!.slice(0, 36);
+
+    const html = await (await request.get(`/propiedades/${id}`)).text();
+    // The page's own price (not a "similar" card) is the hidden-price label.
+    expect(html).toMatch(/text-3xl font-bold text-ink">Consultar valor</);
+    const listing = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+      .flatMap((m) => [JSON.parse(m[1])].flat())
+      .find((b) => b["@type"] === "RealEstateListing");
+    expect(listing.offers.price).toBeUndefined();
+    expect(html.includes('\\"salePrice\\"') || html.includes('"salePrice"')).toBe(false);
   });
 
   test("listado: canonical y noindex en combinaciones de filtros", async ({ request }) => {

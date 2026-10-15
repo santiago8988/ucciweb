@@ -34,6 +34,16 @@ function read(): string {
   return fromReferrer() ?? DEFAULT;
 }
 
+/** Called when a card is clicked: store the listing URL the visitor is leaving. */
+export function rememberListingUrl() {
+  try {
+    if (window.location.pathname !== DEFAULT) return;
+    window.sessionStorage.setItem(KEY, `${window.location.pathname}${window.location.search}`);
+  } catch {
+    // Storage unavailable: the back link falls back to the referrer or /propiedades.
+  }
+}
+
 /** Mounted on /propiedades: records the current listing URL. */
 export function ListingUrlRecorder() {
   const pathname = usePathname();
