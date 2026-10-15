@@ -133,14 +133,16 @@ Superficie pública: páginas RSC, 1 server action (favoritos), optimizador `/_n
 |---|---|---|---|---|
 | Home | 72 → **90** | 8,8 s → **3,3 s** | 1,8 MB → 0,5 MB | ~200 ms → 252 ms |
 | Listado | 72 → **88** | 8,2 s → **3,4 s** | 2,1 MB → 0,6 MB | 2,37 s → 1,92 s (sigue dinámico; falta AWS) |
-| Ficha (22 fotos) | 58 → 63 | 10,5 s → 7,5 s | 3,6 MB → 1,0 MB | 2,42 s → **0,22 s** (ISR, `x-vercel-cache: HIT`) |
-| Contacto | 62 → 65 | 11,1 s → 6,8 s | 2,2 MB → 0,8 MB | — |
+| Ficha (22 fotos) | 58 → 63 → **87** | 10,5 s → 7,5 s → **3,3 s** | 3,6 MB → 1,0 MB → **0,5 MB** | 2,42 s → **0,22 s** (ISR, `x-vercel-cache: HIT`) |
+| Contacto | 62 → 65 → **93** | 11,1 s → 6,8 s → **2,7 s** | 2,2 MB → 0,8 MB → **0,36 MB** | — |
+
+Tercera columna de ficha y contacto: después de diferir el mapa de Google (PERF-06, commit `0a97fe7`). El mapa ahora carga después del evento `load` y solo cerca del viewport; antes bajaba ~500 KB de JS de terceros antes del primer render. FCP: ficha 3,9 s → 1,5 s, contacto 4,0 s → 1,3 s. Requests de terceros en la carga inicial: 17 → 0. Además, la galería pide una miniatura de 64 px para el fondo difuminado, que era el elemento LCP.
 
 - **Mobile:** ancho = 360 px en las 7 páginas, incluida la ficha que medía 2304 px. Barra de WhatsApp visible sin scroll en la ficha.
 - **Datos y seguridad:** listado sin datos ocultos; 6/6 headers de seguridad; optimizador de imágenes cerrado; rol `web_readonly` con RLS limitado a UCCI (12 propiedades visibles, 0 de otras inmobiliarias).
 - **SEO:** sitemap con las 12 fichas; meta descriptions sin "undefined"; OG completo con imagen liviana; redirecciones desde el sitio actual.
 - **Lighthouse SEO:** da 66–69 en staging solo por `is-crawlable`, por el `X-Robots-Tag: noindex` intencional en `*.vercel.app`. En el dominio final no aplica.
-- **Lo que sigue frenando ficha y contacto:** el mapa embebido (PERF-06) y el retraso de render del contenido (~2 s de `elementRenderDelay`). Los dos están en el bloque de 1 mes.
+- **Ficha y contacto (resuelto en `0a97fe7`):** las frenaban el mapa embebido (PERF-06) y el fondo difuminado de la galería como elemento LCP. Ver la tercera columna de la tabla.
 
 Metodología de rendimiento: Lighthouse 13.5.0 local, Chrome headless, 3 corridas por página y form factor, mediana. Validado con PageSpeed Insights (home mobile: 73 / LCP 8,0 s). Páginas: `/`, `/propiedades?op=venta&mon=USD&tipo=casa,departamento,terreno`, `/propiedades/4b15730f-…` (22 fotos), `/contacto`.
 
