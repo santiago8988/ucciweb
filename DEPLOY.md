@@ -77,7 +77,7 @@ En el servidor, en la carpeta del repo:
 
 ```bash
 cp .env.example .env.production
-nano .env.production   # completar DATABASE_URL (rol web_readonly), ORGANIZATION_ID, NEXT_PUBLIC_SITE_URL, DOMAIN, APEX_DOMAIN, ACME_EMAIL
+nano .env.production   # completar DATABASE_URL (rol web_readonly), ORGANIZATION_ID, NEXT_PUBLIC_SITE_URL, REVALIDATE_SECRET, DOMAIN, APEX_DOMAIN, ACME_EMAIL
 ```
 
 ```bash
@@ -116,6 +116,29 @@ Tiene que responder `200` con `content-security-policy` y `strict-transport-secu
 - **Search Console:** dar de alta el dominio y enviar `https://www.uccipropiedades.com/sitemap.xml`.
 - **WhatsApp:** pegar el link de una ficha en un chat y confirmar que aparece la vista previa con foto.
 - **Analytics:** en GA4 → Tiempo real, tocar WhatsApp en una ficha y ver el evento `whatsapp_click`.
+- **Tests de solo lectura contra el sitio publicado:**
+  ```bash
+  E2E_BASE_URL=https://www.uccipropiedades.com npm run test:e2e
+  ```
+
+## Webhooks de Supabase
+
+Hacen que los cambios de la app de agentes se vean al instante en el sitio. Sin webhooks, la caché se renueva cada 5 minutos.
+
+1. Generá un secreto largo y cargalo como `REVALIDATE_SECRET`: en `.env.production` del servidor y en Vercel (Production y Preview, marcado *Sensitive*). Después hacé redeploy.
+   ```bash
+   openssl rand -hex 32
+   ```
+2. En Supabase → **Database → Webhooks** → *Create a new hook*, uno por cada tabla: `properties`, `property_images`, `property_videos` y `agents`.
+   - Events: **Insert, Update, Delete**.
+   - Type: **HTTP Request**, method **POST**.
+   - URL: `https://<dominio>/api/revalidate` (hoy `https://ucciweb.vercel.app/api/revalidate`; cambiarla al dominio final después del cambio de DNS).
+   - HTTP Headers: `Authorization: Bearer <REVALIDATE_SECRET>` y `Content-Type: application/json`.
+3. Probalo editando una propiedad en la app de agentes: el cambio tiene que verse en el sitio con solo recargar.
+
+Notas:
+- Los webhooks son triggers en la base compartida, así que afectan a todas las inmobiliarias. El endpoint ignora los cambios de propiedades de otras organizaciones, pero cada cambio igual genera un request.
+- Si cambia el secreto, hay que actualizarlo en los 4 webhooks.
 
 ## 8. Actualizar y volver atrás
 

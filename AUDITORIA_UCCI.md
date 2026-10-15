@@ -352,6 +352,17 @@ Además, la home no tiene `<h1>` (A11Y-02) y la paginación no usa links rastrea
 
 ---
 
+## 4.9 Estado de implementación (actualizado 15/10/2026)
+
+| Bloque | Hallazgos resueltos | Commits |
+|---|---|---|
+| Quick wins + inmediato | MOB-01..04, UX-01..06, UX-11, UX-15 (código; falta el ID de GA4), UX-16, PERF-01..05, PERF-07, PERF-10..13, FE-01..05, FE-07, A11Y-01..03, A11Y-06, A11Y-08, SEC-01..06, SEO-01..04, SEO-09, SEO-10, BE-04, BE-06 | `5d9b7bf`, `4c5bf26`, `956307b` |
+| Ficha y contacto | PERF-06 (mapa diferido), LCP de la galería | `0a97fe7` |
+| 1 mes, puntos 1–3 | UX-08, UX-09, UX-10, UX-12, UX-14, A11Y-04, BE-08; reservadas en el listado y filtro "Ver vendidas" | `6e428e5`, `c571f8b` |
+| 1 mes, puntos 4–7 | BE-05 + BE-01 (caché por tag con invalidación por webhook), SEO-05, SEO-06, SEO-08, FE-06, FE-08 (README, CI y 39 tests e2e), FE-09, BE-10 (log estructurado de errores), A11Y-07 | ver `git log` |
+
+**Pendientes:** bloque de 3 meses (BE-07, BE-09, BE-12, SEO-07, PERF-09, UX-13, UX-17..19, A11Y-05), landings por búsqueda (pospuestas mientras haya poco inventario, para no generar páginas casi vacías), Sentry (opcional, requiere cuenta) y el deploy en AWS.
+
 ## 5. Quick wins
 
 Alto impacto y esfuerzo S (menos de medio día cada uno), ordenados por impacto/esfuerzo.
