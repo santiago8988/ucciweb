@@ -3,6 +3,7 @@ import Image from "next/image";
 import { MapPin, Phone, Mail, ArrowUpRight, Instagram, Clock } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { OFFICE, buildTelUrl, buildWhatsAppUrl } from "@/lib/constants";
+import logoFooter from "@/assets/logo-ucci-margen.png";
 
 const NAV_LINKS = [
   { href: "/", label: "Inicio" },
@@ -23,10 +24,9 @@ export function Footer() {
           <div className="md:max-w-xs">
             <Link href="/" className="flex mb-5">
               <Image
-                src="/logo-ucci-margen.svg"
-                alt="UCCI Propiedades"
-                width={280}
-                height={120}
+                src={logoFooter}
+                alt="Atilio Ucci e Hijos Propiedades"
+                sizes="213px"
                 className="w-2/3 h-auto"
               />
             </Link>
@@ -137,7 +137,12 @@ export function Footer() {
         <Separator className="bg-ink/10" />
 
         <div className="flex flex-col items-center justify-between gap-4 py-6 text-xs text-ink md:flex-row">
-          <p>&copy; {new Date().getFullYear()} UCCI Propiedades. Todos los derechos reservados.</p>
+          <p>
+            &copy; {new Date().getFullYear()} UCCI Propiedades. Todos los derechos reservados. ·{" "}
+            <Link href="/privacidad" className="underline underline-offset-2">
+              Política de privacidad
+            </Link>
+          </p>
           <p>Mar del Plata, Argentina</p>
         </div>
       </div>

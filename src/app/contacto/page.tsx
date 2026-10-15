@@ -32,7 +32,8 @@ export default function ContactoPage() {
           alt="Atardecer en Mar del Plata"
           fill
           className="object-cover opacity-30"
-          priority
+          sizes="100vw"
+          preload
         />
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.4)_100%)]" />
         <div className="content-wrap relative z-10">

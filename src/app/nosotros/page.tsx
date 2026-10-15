@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/lib/button-variants";
 import { buildWhatsAppUrl } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import heroImage from "@/assets/hero-playa-grande.jpg";
 
 export const metadata: Metadata = {
   title: "Nosotros",
@@ -51,11 +52,13 @@ export default function NosotrosPage() {
       {/* 1 — Hero with photo and tagline */}
       <section className="relative overflow-hidden bg-ink pt-40 pb-28 md:pt-48 md:pb-36">
         <Image
-          src="/hero-playa-grande.jpg"
+          src={heroImage}
           alt="Playa Grande, Mar del Plata"
           fill
+          sizes="100vw"
+          placeholder="blur"
           className="object-cover opacity-40"
-          priority
+          preload
         />
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.4)_100%)]" />
 

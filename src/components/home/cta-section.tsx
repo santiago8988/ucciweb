@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Phone, Home, Shield, TrendingUp, Search, Users, Award } from "lucide-react";
+import { Phone, Shield, TrendingUp, Search, Users } from "lucide-react";
 import { buttonVariants } from "@/lib/button-variants";
 import { cn } from "@/lib/utils";
 

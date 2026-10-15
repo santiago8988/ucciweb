@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   useCallback,
-  useEffect,
   useMemo,
   useOptimistic,
   useRef,
@@ -11,10 +10,9 @@ import {
   useTransition,
 } from "react";
 import { X, Check, Search, ChevronDown, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { OPERATION_TYPE_LABELS, PROPERTY_TYPE_LABELS } from "@/lib/constants";
+import { PROPERTY_TYPES, PROPERTY_TYPE_LABELS } from "@/lib/constants";
 
 // URL param keys — kept short and stable for shareable URLs.
 const PARAM = {
@@ -36,14 +34,24 @@ const PARAM = {
   q: "q",
 } as const;
 
+// Single choice: "Todas" clears the param.
 const OPERATION_OPTIONS = [
-  { value: "venta", label: OPERATION_TYPE_LABELS.venta },
-  { value: "alquiler", label: OPERATION_TYPE_LABELS.alquiler },
-];
+  { value: null, label: "Todas" },
+  { value: "venta", label: "Venta" },
+  { value: "alquiler", label: "Alquiler" },
+] as const;
 
-const TYPE_OPTIONS = Object.entries(PROPERTY_TYPE_LABELS).map(
-  ([value, label]) => ({ value, label })
-);
+// Without a currency the price range is ignored (ARS and USD amounts aren't comparable).
+const CURRENCY_OPTIONS = [
+  { value: null, label: "Cualquiera" },
+  { value: "ARS", label: "ARS" },
+  { value: "USD", label: "USD" },
+] as const;
+
+const TYPE_OPTIONS = PROPERTY_TYPES.map((value) => ({
+  value,
+  label: PROPERTY_TYPE_LABELS[value],
+}));
 
 function parseList(raw: string | null): string[] {
   if (!raw) return [];
@@ -74,11 +82,11 @@ export function PropertyFilters({
   );
 
   // Snapshot values from optimistic URL.
-  const ops = parseList(optimisticParams.get(PARAM.op));
+  const op = optimisticParams.get(PARAM.op);
   const tipos = parseList(optimisticParams.get(PARAM.tipo));
   const locs = parseList(optimisticParams.get(PARAM.loc));
   const bars = parseList(optimisticParams.get(PARAM.bar));
-  const currency = optimisticParams.get(PARAM.mon) || "ARS";
+  const currency = optimisticParams.get(PARAM.mon);
   const amb = optimisticParams.get(PARAM.amb);
   const dorm = optimisticParams.get(PARAM.dorm);
 
@@ -134,9 +142,6 @@ export function PropertyFilters({
     return false;
   }, [optimisticParams]);
 
-  // Visually, when no op is set we show both chips as selected (default = all operations).
-  const visibleOps = ops.length === 0 ? OPERATION_OPTIONS.map((o) => o.value) : ops;
-
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between px-1 pb-3">
@@ -162,9 +167,9 @@ export function PropertyFilters({
         <ChipRow>
           {OPERATION_OPTIONS.map((opt) => (
             <Chip
-              key={opt.value}
-              active={visibleOps.includes(opt.value)}
-              onClick={() => toggleMulti(PARAM.op, opt.value)}
+              key={opt.label}
+              active={op === opt.value}
+              onClick={() => setSingle(PARAM.op, opt.value)}
             >
               {opt.label}
             </Chip>
@@ -209,29 +214,45 @@ export function PropertyFilters({
 
       {/* Rango de precio */}
       <FilterSection title="Rango de precio">
-        <div className="flex items-center gap-1 mb-3">
-          {["ARS", "USD"].map((cur) => (
+        <div className="flex items-center gap-1 mb-3" role="group" aria-label="Moneda">
+          {CURRENCY_OPTIONS.map((cur) => (
             <button
-              key={cur}
-              onClick={() => setSingle(PARAM.mon, cur === "ARS" ? null : cur)}
+              key={cur.label}
+              type="button"
+              aria-pressed={currency === cur.value}
+              onClick={() =>
+                commit((params) => {
+                  if (cur.value) params.set(PARAM.mon, cur.value);
+                  else {
+                    params.delete(PARAM.mon);
+                    params.delete(PARAM.pmin);
+                    params.delete(PARAM.pmax);
+                  }
+                })
+              }
               className={cn(
-                "flex-1 rounded-md border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors",
-                currency === cur
+                "flex-1 rounded-md border px-2 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors",
+                currency === cur.value
                   ? "border-brand bg-brand text-black"
-                  : "border-ink/15 bg-white text-ink/60 hover:border-ink/30"
+                  : "border-ink/15 bg-white text-ink/70 hover:border-ink/30"
               )}
             >
-              {cur}
+              {cur.label}
             </button>
           ))}
         </div>
-        <DebouncedRange
-          minKey={PARAM.pmin}
-          maxKey={PARAM.pmax}
-          placeholderMin="Desde"
-          placeholderMax="Hasta"
-          commit={commit}
-        />
+        {currency ? (
+          <DebouncedRange
+            minKey={PARAM.pmin}
+            maxKey={PARAM.pmax}
+            placeholderMin={`Desde ${currency}`}
+            placeholderMax={`Hasta ${currency}`}
+            label="Precio"
+            commit={commit}
+          />
+        ) : (
+          <p className="text-xs text-ink/70">Elegí la moneda para filtrar por precio.</p>
+        )}
       </FilterSection>
 
       {/* Ambientes */}
@@ -256,6 +277,7 @@ export function PropertyFilters({
       <FilterSection title="Antigüedad (años)">
         <DebouncedRange
           minKey={PARAM.antmin}
+          label="Antigüedad en años"
           maxKey={PARAM.antmax}
           placeholderMin="Desde"
           placeholderMax="Hasta"
@@ -267,6 +289,7 @@ export function PropertyFilters({
       <FilterSection title="Superficie cubierta (m²)">
         <DebouncedRange
           minKey={PARAM.cmin}
+          label="Superficie cubierta en m²"
           maxKey={PARAM.cmax}
           placeholderMin="Mín."
           placeholderMax="Máx."
@@ -278,6 +301,7 @@ export function PropertyFilters({
       <FilterSection title="Superficie total (m²)">
         <DebouncedRange
           minKey={PARAM.tmin}
+          label="Superficie total en m²"
           maxKey={PARAM.tmax}
           placeholderMin="Mín."
           placeholderMax="Máx."
@@ -312,6 +336,8 @@ function FilterSection({
   return (
     <div className="border-b border-ink/10 last:border-b-0">
       <button
+        type="button"
+        aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between py-3 px-1 text-left"
       >
@@ -345,6 +371,8 @@ function Chip({
 }) {
   return (
     <button
+      type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={cn(
         "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-all",
@@ -371,11 +399,14 @@ function NumericChips({
   return (
     <div className="flex flex-wrap gap-1.5">
       {Array.from({ length: max }, (_, i) => i + 1).map((n) => {
-        const label = n === max ? `${n}+` : `${n}`;
+        // The filter is a minimum ("3" means 3 or more), so every label says so.
+        const label = `${n}+`;
         const active = value === n;
         return (
           <button
             key={n}
+            type="button"
+            aria-pressed={active}
             onClick={() => onChange(active ? null : n)}
             className={cn(
               "h-8 min-w-10 rounded-md border px-2 text-sm font-medium transition-all",
@@ -397,12 +428,14 @@ function DebouncedRange({
   maxKey,
   placeholderMin,
   placeholderMax,
+  label,
   commit,
 }: {
   minKey: string;
   maxKey: string;
   placeholderMin: string;
   placeholderMax: string;
+  label: string;
   commit: (mutate: (params: URLSearchParams) => void) => void;
 }) {
   return (
@@ -410,52 +443,72 @@ function DebouncedRange({
       <DebouncedNumberInput
         paramKey={minKey}
         placeholder={placeholderMin}
+        label={`${label} mínimo`}
         commit={commit}
       />
-      <span className="text-ink/30">—</span>
+      <span className="text-ink/30" aria-hidden>—</span>
       <DebouncedNumberInput
         paramKey={maxKey}
         placeholder={placeholderMax}
+        label={`${label} máximo`}
         commit={commit}
       />
     </div>
   );
 }
 
-function DebouncedNumberInput({
-  paramKey,
-  placeholder,
-  commit,
-}: {
-  paramKey: string;
-  placeholder: string;
-  commit: (mutate: (params: URLSearchParams) => void) => void;
-}) {
-  const searchParams = useSearchParams();
-  const urlValue = searchParams.get(paramKey) || "";
+// Local input state that follows the URL when it changes from elsewhere
+// (e.g. "Limpiar"), adjusted during render instead of in an effect. Our own
+// debounced commit marks its value as synced so the URL echo doesn't clobber
+// what the user kept typing meanwhile.
+function useUrlSyncedValue(urlValue: string) {
   const [value, setValue] = useState(urlValue);
+  const [syncedUrl, setSyncedUrl] = useState(urlValue);
+  if (urlValue !== syncedUrl) {
+    setSyncedUrl(urlValue);
+    setValue(urlValue);
+  }
+  return { value, setValue, markSynced: setSyncedUrl };
+}
 
-  // Keep local state in sync when URL is changed from elsewhere (e.g. "Limpiar").
-  const lastUrlRef = useRef(urlValue);
-  useEffect(() => {
-    if (urlValue !== lastUrlRef.current) {
-      lastUrlRef.current = urlValue;
-      setValue(urlValue);
-    }
-  }, [urlValue]);
-
+function useDebouncedCommit(
+  paramKey: string,
+  commit: (mutate: (params: URLSearchParams) => void) => void,
+  markSynced: (value: string) => void,
+  delay: number
+) {
   const timeoutRef = useRef<number | null>(null);
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = e.target.value.replace(/[^\d]/g, "");
-    setValue(next);
+  return (next: string) => {
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
     timeoutRef.current = window.setTimeout(() => {
-      lastUrlRef.current = next;
+      markSynced(next);
       commit((params) => {
         if (next) params.set(paramKey, next);
         else params.delete(paramKey);
       });
-    }, 450);
+    }, delay);
+  };
+}
+
+function DebouncedNumberInput({
+  paramKey,
+  placeholder,
+  label,
+  commit,
+}: {
+  paramKey: string;
+  placeholder: string;
+  label: string;
+  commit: (mutate: (params: URLSearchParams) => void) => void;
+}) {
+  const searchParams = useSearchParams();
+  const { value, setValue, markSynced } = useUrlSyncedValue(searchParams.get(paramKey) || "");
+  const schedule = useDebouncedCommit(paramKey, commit, markSynced, 450);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value.replace(/[^\d]/g, "");
+    setValue(next);
+    schedule(next);
   };
 
   return (
@@ -464,6 +517,7 @@ function DebouncedNumberInput({
       value={value}
       onChange={handleChange}
       placeholder={placeholder}
+      aria-label={label}
       className="h-9 text-sm"
     />
   );
@@ -479,29 +533,13 @@ function DebouncedText({
   commit: (mutate: (params: URLSearchParams) => void) => void;
 }) {
   const searchParams = useSearchParams();
-  const urlValue = searchParams.get(paramKey) || "";
-  const [value, setValue] = useState(urlValue);
+  const { value, setValue, markSynced } = useUrlSyncedValue(searchParams.get(paramKey) || "");
+  const schedule = useDebouncedCommit(paramKey, commit, markSynced, 500);
 
-  const lastUrlRef = useRef(urlValue);
-  useEffect(() => {
-    if (urlValue !== lastUrlRef.current) {
-      lastUrlRef.current = urlValue;
-      setValue(urlValue);
-    }
-  }, [urlValue]);
-
-  const timeoutRef = useRef<number | null>(null);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = e.target.value;
     setValue(next);
-    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-    timeoutRef.current = window.setTimeout(() => {
-      lastUrlRef.current = next;
-      commit((params) => {
-        if (next.trim()) params.set(paramKey, next.trim());
-        else params.delete(paramKey);
-      });
-    }, 500);
+    schedule(next.trim());
   };
 
   return (
@@ -511,6 +549,7 @@ function DebouncedText({
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
+        aria-label="Buscar por características"
         className="h-9 pl-8 text-sm"
       />
     </div>
@@ -541,6 +580,7 @@ function LocalityPicker({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar..."
+          aria-label="Buscar localidad"
           className="h-9 pl-8 text-sm"
         />
       </div>
@@ -553,6 +593,8 @@ function LocalityPicker({
           return (
             <button
               key={loc}
+              type="button"
+              aria-pressed={active}
               onClick={() => onToggle(loc)}
               className={cn(
                 "flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm transition-colors",
@@ -605,6 +647,7 @@ function SearchFirstPicker({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={`Buscar entre ${options.length}...`}
+          aria-label="Buscar barrio"
           className="h-9 pl-8 text-sm"
         />
       </div>
@@ -636,6 +679,8 @@ function SearchFirstPicker({
             return (
               <button
                 key={val}
+                type="button"
+                aria-pressed={active}
                 onClick={() => onToggle(val)}
                 className={cn(
                   "flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm transition-colors",

@@ -20,6 +20,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { cn } from "@/lib/utils";
 import { useFavorites } from "@/lib/favorites";
 import { OFFICE } from "@/lib/constants";
+import logo from "@/assets/logo-ucci.png";
 
 const NAV_LINKS = [
   { href: "/", label: "Inicio", icon: Home },
@@ -39,17 +40,20 @@ export function Header() {
   const { favorites } = useFavorites();
   const favCount = favorites.length;
 
+  // Close the mobile sheet whenever the route changes (adjusting state during
+  // render instead of in an effect avoids a cascading re-render).
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setMobileOpen(false);
+  }
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     handleScroll();
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // Close mobile sheet whenever the route changes
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
 
   const isTransparent = hasDarkHero && !scrolled;
 
@@ -68,15 +72,14 @@ export function Header() {
       <div className="container mx-auto flex items-center justify-between px-4 py-2.5">
         <Link href="/" className="flex items-center gap-3" aria-label="UCCI Propiedades">
           <Image
-            src="/logo-ucci.svg"
+            src={logo}
             alt="UCCI Propiedades"
-            width={220}
-            height={95}
+            sizes="(min-width: 768px) 127px, 109px"
             className={cn(
               "h-12 w-auto md:h-14 transition-[filter] duration-300",
               isTransparent ? "filter-[brightness(0)_invert(1)]" : "filter-[brightness(0)]"
             )}
-            priority
+            preload
           />
         </Link>
 
@@ -157,10 +160,9 @@ export function Header() {
                 aria-label="UCCI Propiedades"
               >
                 <Image
-                  src="/logo-ucci.svg"
+                  src={logo}
                   alt="UCCI Propiedades"
-                  width={160}
-                  height={68}
+                  sizes="82px"
                   className="h-9 w-auto filter-[brightness(0)_invert(1)]"
                 />
               </Link>

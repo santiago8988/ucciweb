@@ -6,31 +6,25 @@ import { motion } from "framer-motion";
 import { MapPin, Bed, Bath, Maximize, Car } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/property/favorite-button";
-import { OPERATION_TYPE_LABELS, PROPERTY_TYPE_LABELS } from "@/lib/constants";
-import { getMainImage, getPropertyPrice, formatSurface } from "@/lib/format";
-import type { Property, PropertyImage } from "@/generated/prisma";
-
-type PropertyWithRelations = Property & {
-  images: PropertyImage[];
-};
+import { operationTypeLabel, propertyTypeLabel } from "@/lib/constants";
+import { formatCardSurface, formatLocation, PLACEHOLDER_IMAGE } from "@/lib/format";
+import type { PropertyCardData } from "@/lib/queries";
 
 export function PropertyCard({
   property,
   index = 0,
 }: {
-  property: PropertyWithRelations;
+  property: PropertyCardData;
   index?: number;
 }) {
-  const mainImage = getMainImage(property.images);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- serialized Decimals
-  const price = getPropertyPrice(property as any);
-  const operationLabel = OPERATION_TYPE_LABELS[property.operationType] || property.operationType;
-  const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] || property.propertyType;
+  const operationLabel = operationTypeLabel(property.operationType);
+  const typeLabel = propertyTypeLabel(property.propertyType);
+  const surface = formatCardSurface(property.coveredSurface, property.totalSurface);
 
   const features = [
     property.bedrooms != null && { icon: Bed, value: property.bedrooms },
     property.bathrooms != null && { icon: Bath, value: property.bathrooms },
-    property.totalSurface && { icon: Maximize, value: formatSurface(property.totalSurface as never) },
+    surface && { icon: Maximize, value: surface },
     property.parkingSpaces != null && property.parkingSpaces > 0 && { icon: Car, value: property.parkingSpaces },
   ].filter(Boolean) as { icon: typeof Bed; value: string | number }[];
 
@@ -46,11 +40,11 @@ export function PropertyCard({
           {/* Image — 3:2 aspect like Engel & Völkers */}
           <div className="relative aspect-[3/2] overflow-hidden">
             <Image
-              src={mainImage}
+              src={property.imageUrl ?? PLACEHOLDER_IMAGE}
               alt={property.title}
               fill
               className="object-cover transition-transform duration-700 group-hover:scale-105"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -79,11 +73,11 @@ export function PropertyCard({
           {/* Content */}
           <div className="p-5">
             {/* Price — prominent like Zillow */}
-            <p className="text-xl font-bold text-gray-900">{price}</p>
+            <p className="text-xl font-bold text-gray-900">{property.priceText}</p>
 
             {/* Features row — compact like Zillow (beds · baths · sqft) */}
             {features.length > 0 && (
-              <div className="mt-2 flex items-center gap-1 text-sm text-gray-500">
+              <div className="mt-2 flex flex-wrap items-center gap-1 text-sm text-gray-600">
                 {features.map((f, i) => (
                   <span key={i} className="flex items-center gap-1">
                     {i > 0 && <span className="mx-1 text-gray-300">·</span>}
@@ -100,11 +94,10 @@ export function PropertyCard({
             </h3>
 
             {/* Location */}
-            <p className="mt-1 flex items-center gap-1 text-sm text-gray-400">
+            <p className="mt-1 flex items-center gap-1 text-sm text-gray-600">
               <MapPin className="h-3 w-3 flex-shrink-0" />
               <span className="truncate">
-                {property.neighborhood ? `${property.neighborhood}, ` : ""}
-                {property.locality}, {property.province}
+                {formatLocation(property.neighborhood, property.locality)}
               </span>
             </p>
           </div>

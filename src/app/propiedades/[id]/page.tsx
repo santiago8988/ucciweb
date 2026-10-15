@@ -16,12 +16,14 @@ import { ImageGallery } from "@/components/property/image-gallery";
 import { FavoriteButton } from "@/components/property/favorite-button";
 import { getPropertyById } from "@/lib/queries";
 import {
-  OPERATION_TYPE_LABELS,
-  PROPERTY_TYPE_LABELS,
+  OPERATION_TYPE_PHRASES,
   SITE_NAME,
   CONTACT_DEPARTMENTS,
   buildWhatsAppUrl,
   buildTelUrl,
+  operationTypeLabel,
+  propertyTypeLabel,
+  type OperationTypeValue,
 } from "@/lib/constants";
 import {
   formatPrice,
@@ -30,28 +32,58 @@ import {
   HIDDEN_LOCATION_LABEL,
 } from "@/lib/format";
 import { toEmbedUrl } from "@/lib/video";
+import { MobileContactBar } from "@/components/property/mobile-contact-bar";
 
 export const revalidate = 60;
+
+// Required for ISR on a dynamic route in Next 16: an empty list means no page is
+// prebuilt, each one is rendered on first visit and then cached for `revalidate`.
+export async function generateStaticParams() {
+  return [];
+}
 
 type PageProps = {
   params: Promise<{ id: string }>;
 };
+
+// Open Graph image through the optimizer: 1200 px wide JPEG/WebP of a few
+// hundred KB instead of the multi-MB original (WhatsApp previews).
+function ogImageUrl(imageUrl: string): string {
+  return `/_next/image?url=${encodeURIComponent(imageUrl)}&w=1200&q=75`;
+}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const property = await getPropertyById(id);
   if (!property) return { title: "Propiedad no encontrada" };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- serialized Decimals become strings
   const price = getPropertyPrice(property as any);
-  const where = property.hideLocation ? "Mar del Plata" : property.locality;
+  const where = property.hideLocation
+    ? property.locality
+    : [property.neighborhood, property.locality].filter(Boolean).join(", ");
+  const summary = `${propertyTypeLabel(property.propertyType)} ${
+    OPERATION_TYPE_PHRASES[property.operationType as OperationTypeValue] ?? ""
+  } en ${where}. ${price}.`;
+  const description = `${summary} ${property.description?.slice(0, 120) ?? ""}`.trim();
+  const mainImage =
+    property.images.find((img) => img.isMain)?.imageUrl ?? property.images[0]?.imageUrl;
+  const path = `/propiedades/${property.id}`;
+
   return {
     title: property.title,
-    description: `${PROPERTY_TYPE_LABELS[property.propertyType]} en ${property.operationType} - ${where}. ${price}. ${property.description?.slice(0, 150) || ""}`,
+    description,
+    alternates: { canonical: path },
     openGraph: {
-      title: `${property.title} | ${SITE_NAME}`,
-      description: property.description || "",
-      images: property.images[0]?.imageUrl ? [property.images[0].imageUrl] : [],
+      type: "website",
+      locale: "es_AR",
+      siteName: SITE_NAME,
+      url: path,
+      title: property.title,
+      description,
+      images: mainImage
+        ? [{ url: ogImageUrl(mainImage), width: 1200, alt: property.title }]
+        : undefined,
     },
   };
 }
@@ -65,8 +97,8 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- serialized Decimals become strings
   const prop = property as any;
   const price = getPropertyPrice(prop);
-  const operationLabel = OPERATION_TYPE_LABELS[property.operationType] || property.operationType;
-  const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] || property.propertyType;
+  const operationLabel = operationTypeLabel(property.operationType);
+  const typeLabel = propertyTypeLabel(property.propertyType);
   const amenities = (property.amenities as string[] | null) || [];
   const services = (property.services as string[] | null) || [];
 
@@ -108,7 +140,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   ].filter((f) => f.value != null && f.value !== "" && f.value !== 0);
 
   return (
-    <div className="pt-24 pb-16">
+    <div className="pt-24 pb-28 lg:pb-16">
       <div className="content-wrap">
         {/* Back */}
         <Link
@@ -119,9 +151,11 @@ export default async function PropertyDetailPage({ params }: PageProps) {
           Volver a propiedades
         </Link>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        {/* Explicit grid-cols-1 + min-w-0: otherwise the thumbnail strip's width
+            stretches the implicit column far beyond the phone's viewport. */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Main Content */}
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             <ImageGallery images={property.images} />
 
             <div className="mt-6">
@@ -160,7 +194,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-3xl font-bold text-brand-dark">{price}</p>
+                  <p className="text-3xl font-bold text-ink">{price}</p>
                   {property.expenses && (
                     <p className="text-sm text-gray-500">
                       + {formatPrice(prop.expenses, property.currency)} expensas
@@ -256,7 +290,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="min-w-0 lg:col-span-1">
             <div className="sticky top-28 space-y-6">
               {/* Map — hidden when hideLocation is true. Placed on top so it aligns with the gallery. */}
               {!property.hideLocation && property.latitude && property.longitude && (
@@ -314,6 +348,8 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                       {contactWaNumber && (
                         <a
                           href={buildWhatsAppUrl(contactWaNumber, waMessage)}
+                          data-track="whatsapp"
+                          data-property-code={property.internalCode ?? property.id}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={cn(
@@ -328,6 +364,8 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                       {contactTelNumber && (
                         <a
                           href={buildTelUrl(contactTelNumber)}
+                          data-track="call"
+                          data-property-code={property.internalCode ?? property.id}
                           className={cn(
                             buttonVariants({ variant: "outline" }),
                             "w-full border-ink/15 hover:bg-white"
@@ -386,6 +424,13 @@ export default async function PropertyDetailPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      <MobileContactBar
+        whatsappHref={contactWaNumber ? buildWhatsAppUrl(contactWaNumber, waMessage) : null}
+        telHref={contactTelNumber ? buildTelUrl(contactTelNumber) : null}
+        price={price}
+        propertyCode={property.internalCode ?? property.id}
+      />
     </div>
   );
 }

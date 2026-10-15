@@ -3,7 +3,8 @@ import { Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
+import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
+import { Analytics } from "@/components/analytics";
 
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
@@ -19,16 +20,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: `${SITE_NAME} - Inmobiliaria en Mar del Plata`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
-  icons: {
-    icon: [
-      { url: "/favicon-ucci.svg", type: "image/svg+xml" },
-    ],
-  },
   keywords: [
     "inmobiliaria",
     "propiedades",
@@ -47,6 +44,7 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
+    images: [{ url: "/og-default.jpg", width: 1200, height: 630, alt: SITE_NAME }],
   },
 };
 
@@ -65,6 +63,7 @@ export default function RootLayout({
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <Analytics />
       </body>
     </html>
   );

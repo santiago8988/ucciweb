@@ -1,8 +1,24 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { buttonVariants } from "@/lib/button-variants";
+import { cn } from "@/lib/utils";
+
+// First, last and the current page ± 1, with gaps in between: the row stays
+// short on phones no matter how many pages there are.
+function pageWindow(current: number, total: number): (number | "gap")[] {
+  const pages = new Set([1, total, current - 1, current, current + 1]);
+  const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+  const out: (number | "gap")[] = [];
+  for (const p of sorted) {
+    const prev = out[out.length - 1];
+    if (typeof prev === "number" && p - prev > 1) out.push("gap");
+    out.push(p);
+  }
+  return out;
+}
 
 export function Pagination({
   currentPage,
@@ -11,48 +27,57 @@ export function Pagination({
   currentPage: number;
   totalPages: number;
 }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   if (totalPages <= 1) return null;
 
-  const goToPage = (page: number) => {
+  // Real links (not router.push) so crawlers can follow the pagination.
+  const hrefFor = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("page", page.toString());
-    router.push(`/propiedades?${params.toString()}`);
+    if (page === 1) params.delete("page");
+    else params.set("page", page.toString());
+    const qs = params.toString();
+    return qs ? `/propiedades?${qs}` : "/propiedades";
   };
 
+  const arrow = (page: number, label: string, icon: React.ReactNode, disabled: boolean) =>
+    disabled ? (
+      <span
+        aria-hidden
+        className={cn(buttonVariants({ variant: "outline", size: "icon" }), "pointer-events-none opacity-40")}
+      >
+        {icon}
+      </span>
+    ) : (
+      <Link href={hrefFor(page)} aria-label={label} className={buttonVariants({ variant: "outline", size: "icon" })}>
+        {icon}
+      </Link>
+    );
+
   return (
-    <div className="flex items-center justify-center gap-2 mt-10">
-      <Button
-        variant="outline"
-        size="icon"
-        disabled={currentPage <= 1}
-        onClick={() => goToPage(currentPage - 1)}
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-
-      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-        <Button
-          key={page}
-          variant={page === currentPage ? "default" : "outline"}
-          size="icon"
-          onClick={() => goToPage(page)}
-          className={page === currentPage ? "bg-brand text-black hover:bg-brand-dark hover:text-white" : ""}
-        >
-          {page}
-        </Button>
-      ))}
-
-      <Button
-        variant="outline"
-        size="icon"
-        disabled={currentPage >= totalPages}
-        onClick={() => goToPage(currentPage + 1)}
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-    </div>
+    <nav aria-label="Paginación" className="mt-10 flex flex-wrap items-center justify-center gap-2">
+      {arrow(currentPage - 1, "Página anterior", <ChevronLeft className="h-4 w-4" />, currentPage <= 1)}
+      {pageWindow(currentPage, totalPages).map((page, i) =>
+        page === "gap" ? (
+          <span key={`gap-${i}`} className="px-1 text-ink/50" aria-hidden>
+            …
+          </span>
+        ) : (
+          <Link
+            key={page}
+            href={hrefFor(page)}
+            aria-label={`Página ${page}`}
+            aria-current={page === currentPage ? "page" : undefined}
+            className={cn(
+              buttonVariants({ variant: page === currentPage ? "default" : "outline", size: "icon" }),
+              page === currentPage && "bg-brand text-black hover:bg-brand-dark hover:text-white"
+            )}
+          >
+            {page}
+          </Link>
+        )
+      )}
+      {arrow(currentPage + 1, "Página siguiente", <ChevronRight className="h-4 w-4" />, currentPage >= totalPages)}
+    </nav>
   );
 }

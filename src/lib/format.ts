@@ -17,9 +17,23 @@ export function formatSurface(surface: PriceValue): string {
   return `${num.toLocaleString("es-AR")} m²`;
 }
 
-export function getMainImage(images: { imageUrl: string; isMain: boolean }[]): string {
-  const main = images.find((img) => img.isMain);
-  return main?.imageUrl || images[0]?.imageUrl || "/placeholder-property.jpg";
+export const PLACEHOLDER_IMAGE = "/placeholder-property.jpg";
+
+// Surface shown on cards: covered area is what buyers compare; total area
+// (often the lot) is added when it differs.
+export function formatCardSurface(
+  covered: number | null,
+  total: number | null
+): string | null {
+  if (covered && total && covered !== total) {
+    return `${formatSurface(covered)} cub. · ${formatSurface(total)} tot.`;
+  }
+  const value = covered || total;
+  return value ? formatSurface(value) : null;
+}
+
+export function formatLocation(neighborhood: string | null, locality: string): string {
+  return [neighborhood, locality].filter(Boolean).join(", ");
 }
 
 export const HIDDEN_PRICE_LABEL = "Consultar valor";

@@ -6,42 +6,34 @@ import { motion } from "framer-motion";
 import { MapPin, Bed, Bath, Maximize, Car, Home } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/property/favorite-button";
-import { OPERATION_TYPE_LABELS, PROPERTY_TYPE_LABELS } from "@/lib/constants";
-import { getMainImage, getPropertyPrice, formatSurface } from "@/lib/format";
-import type { Property, PropertyImage } from "@/generated/prisma";
-
-type PropertyWithRelations = Property & {
-  images: PropertyImage[];
-};
+import { operationTypeLabel, propertyTypeLabel } from "@/lib/constants";
+import { formatCardSurface, formatLocation, PLACEHOLDER_IMAGE } from "@/lib/format";
+import type { PropertyCardData } from "@/lib/queries";
 
 export function PropertyRow({
   property,
   index = 0,
 }: {
-  property: PropertyWithRelations;
+  property: PropertyCardData;
   index?: number;
 }) {
-  const mainImage = getMainImage(property.images);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- serialized Decimals
-  const price = getPropertyPrice(property as any);
-  const operationLabel = OPERATION_TYPE_LABELS[property.operationType] || property.operationType;
-  const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] || property.propertyType;
+  const operationLabel = operationTypeLabel(property.operationType);
+  const typeLabel = propertyTypeLabel(property.propertyType);
+  const surface = formatCardSurface(property.coveredSurface, property.totalSurface);
+  // The first row is the LCP candidate: load it eagerly and don't fade it in.
+  const isFirst = index === 0;
 
   const features = [
     property.rooms != null && property.rooms > 0 && { icon: Home, value: `${property.rooms} amb.` },
     property.bedrooms != null && { icon: Bed, value: `${property.bedrooms} dorm.` },
     property.bathrooms != null && { icon: Bath, value: `${property.bathrooms} baño${property.bathrooms === 1 ? "" : "s"}` },
     property.parkingSpaces != null && property.parkingSpaces > 0 && { icon: Car, value: `${property.parkingSpaces} coch.` },
-    property.totalSurface && { icon: Maximize, value: formatSurface(property.totalSurface as never) },
+    surface && { icon: Maximize, value: surface },
   ].filter(Boolean) as { icon: typeof Bed; value: string }[];
-
-  const locationText = [property.neighborhood, property.locality, property.province]
-    .filter(Boolean)
-    .join(", ");
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={index < 2 ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.3) }}
     >
@@ -53,11 +45,13 @@ export function PropertyRow({
           {/* Image */}
           <div className="relative aspect-4/3 sm:aspect-auto sm:w-72 sm:shrink-0 overflow-hidden">
             <Image
-              src={mainImage}
+              src={property.imageUrl ?? PLACEHOLDER_IMAGE}
               alt={property.title}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 640px) 100vw, 288px"
+              loading={isFirst ? "eager" : "lazy"}
+              fetchPriority={isFirst ? "high" : "auto"}
             />
 
             {/* Operation badge — top left */}
@@ -82,8 +76,8 @@ export function PropertyRow({
           <div className="flex flex-1 flex-col p-5 sm:p-6 min-w-0">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xl font-bold text-ink sm:text-2xl">{price}</p>
-                <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-widest text-brand-dark">
+                <p className="text-xl font-bold text-ink sm:text-2xl">{property.priceText}</p>
+                <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-widest text-ink/70">
                   {typeLabel}
                 </p>
               </div>
@@ -93,15 +87,17 @@ export function PropertyRow({
               {property.title}
             </h3>
 
-            {property.description && (
-              <p className="mt-1 text-sm text-ink/60 line-clamp-2">
-                {property.description}
+            {property.excerpt && (
+              <p className="mt-1 text-sm text-ink/70 line-clamp-2">
+                {property.excerpt}
               </p>
             )}
 
-            <p className="mt-3 flex items-center gap-1 text-sm text-ink/50">
+            <p className="mt-3 flex items-center gap-1 text-sm text-ink/70">
               <MapPin className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{locationText}</span>
+              <span className="truncate">
+                {formatLocation(property.neighborhood, property.locality)}
+              </span>
             </p>
 
             {features.length > 0 && (

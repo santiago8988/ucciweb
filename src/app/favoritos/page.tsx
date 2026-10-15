@@ -8,38 +8,38 @@ import { PropertyCard } from "@/components/property/property-card";
 import { buttonVariants } from "@/lib/button-variants";
 import { cn } from "@/lib/utils";
 import { fetchFavoriteProperties } from "./actions";
-import type { Property, PropertyImage } from "@/generated/prisma";
-
-type PropertyWithRelations = Property & {
-  images: PropertyImage[];
-};
+import type { PropertyCardData } from "@/lib/queries";
 
 type LoadState =
   | { status: "loading" }
-  | { status: "ready"; properties: PropertyWithRelations[] };
+  | { status: "error" }
+  | { status: "ready"; properties: PropertyCardData[] };
 
 export default function FavoritosPage() {
   const { favorites, clearFavorites } = useFavorites();
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
 
-    fetchFavoriteProperties([...favorites]).then((data) => {
-      if (cancelled) return;
-      const byId = new Map(
-        (data as PropertyWithRelations[]).map((p) => [p.id, p])
-      );
-      const ordered = favorites
-        .map((id) => byId.get(id))
-        .filter((p): p is PropertyWithRelations => Boolean(p));
-      setState({ status: "ready", properties: ordered });
-    });
+    fetchFavoriteProperties([...favorites])
+      .then((data) => {
+        if (cancelled) return;
+        const byId = new Map(data.map((p) => [p.id, p]));
+        const ordered = favorites
+          .map((id) => byId.get(id))
+          .filter((p): p is PropertyCardData => Boolean(p));
+        setState({ status: "ready", properties: ordered });
+      })
+      .catch(() => {
+        if (!cancelled) setState({ status: "error" });
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [favorites]);
+  }, [favorites, attempt]);
 
   return (
     <div>
@@ -61,8 +61,24 @@ export default function FavoritosPage() {
       </section>
 
       <div className="content-wrap py-16">
-        {state.status !== "ready" ? (
-          <div className="py-24 text-center text-ink/40">Cargando tus favoritos…</div>
+        {state.status === "loading" ? (
+          <div className="py-24 text-center text-ink/60">Cargando tus favoritos…</div>
+        ) : state.status === "error" ? (
+          <div className="py-24 text-center">
+            <p className="text-lg font-medium text-ink">
+              No pudimos cargar tus favoritos.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setState({ status: "loading" });
+                setAttempt((n) => n + 1);
+              }}
+              className={cn(buttonVariants({ variant: "outline" }), "mt-6")}
+            >
+              Reintentar
+            </button>
+          </div>
         ) : state.properties.length === 0 ? (
           <div className="py-24 text-center">
             <div className="mx-auto mb-6 grid h-16 w-16 place-items-center rounded-full bg-brand-soft">
@@ -103,7 +119,7 @@ export default function FavoritosPage() {
                 Vaciar lista
               </button>
             </div>
-            <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
               {state.properties.map((p, i) => (
                 <PropertyCard key={p.id} property={p} index={i} />
               ))}

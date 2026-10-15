@@ -6,13 +6,9 @@ import { ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/lib/button-variants";
 import { PropertyCard } from "@/components/property/property-card";
 import { cn } from "@/lib/utils";
-import type { Property, PropertyImage } from "@/generated/prisma";
+import type { PropertyCardData } from "@/lib/queries";
 
-type PropertyWithRelations = Property & {
-  images: PropertyImage[];
-};
-
-export function FeaturedProperties({ properties }: { properties: PropertyWithRelations[] }) {
+export function FeaturedProperties({ properties }: { properties: PropertyCardData[] }) {
   if (properties.length === 0) return null;
 
   return (
@@ -46,7 +42,9 @@ export function FeaturedProperties({ properties }: { properties: PropertyWithRel
           <div className="mt-4 h-px bg-gradient-to-r from-brand-dark/40 to-transparent max-w-xs" />
         </motion.div>
 
-        <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Explicit grid-cols-1: an implicit auto track grows to the cards'
+            max-content and overflows narrow phones. */}
+        <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
           {properties.map((property, i) => (
             <PropertyCard key={property.id} property={property} index={i} />
           ))}

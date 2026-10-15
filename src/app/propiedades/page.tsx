@@ -1,13 +1,22 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { Search } from "lucide-react";
+import Link from "next/link";
+import { Search, MessageCircle } from "lucide-react";
+import { buttonVariants } from "@/lib/button-variants";
+import { cn } from "@/lib/utils";
 import { getProperties, getLocalities, getNeighborhoods, type PropertyFilters as DBFilters, type PropertyOrderBy } from "@/lib/queries";
 import { PropertyRow } from "@/components/property/property-row";
 import { PropertyFilters } from "@/components/property/property-filters";
 import { MobileFilters } from "@/components/property/mobile-filters";
 import { SortSelect } from "@/components/property/sort-select";
 import { Pagination } from "@/components/property/pagination";
-import { PropertyType, OperationType, Currency } from "@/generated/prisma";
+import type { PropertyType, OperationType, Currency } from "@/generated/prisma";
+import {
+  PROPERTY_TYPES,
+  OPERATION_TYPES,
+  RENTALS_WHATSAPP,
+  buildWhatsAppUrl,
+} from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Propiedades",
@@ -42,21 +51,24 @@ function parseInt32(raw: string | undefined): number | undefined {
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
-const PROPERTY_TYPES = [
-  "casa",
-  "departamento",
-  "terreno",
-  "local_comercial",
-  "oficina",
-  "cochera",
-  "galpon",
-] as const satisfies readonly PropertyType[];
+// Compile-time check that the shared lists match the Prisma enums.
+PROPERTY_TYPES satisfies readonly PropertyType[];
+OPERATION_TYPES satisfies readonly OperationType[];
 
-const OPERATION_TYPES = [
-  "venta",
-  "alquiler",
-  "venta_alquiler",
-] as const satisfies readonly OperationType[];
+function parseText(raw: string | undefined): string[] | undefined {
+  if (!raw) return undefined;
+  const values = raw
+    .split(",")
+    .map((s) => s.trim().slice(0, 80))
+    .filter(Boolean)
+    .slice(0, 20);
+  return values.length > 0 ? values : undefined;
+}
+
+// Accept ranges typed in either order.
+function orderedRange(a?: number, b?: number): [number | undefined, number | undefined] {
+  return a != null && b != null && a > b ? [b, a] : [a, b];
+}
 
 const SORT_VALUES: PropertyOrderBy[] = ["recent", "price_asc", "price_desc"];
 
@@ -78,30 +90,34 @@ export default async function PropiedadesPage({
     ? (sortRaw as PropertyOrderBy)
     : undefined;
 
+  const [minPrice, maxPrice] = orderedRange(parseInt32(first(params.pmin)), parseInt32(first(params.pmax)));
+  const [minAge, maxAge] = orderedRange(parseInt32(first(params.antmin)), parseInt32(first(params.antmax)));
+  const [minCovered, maxCovered] = orderedRange(parseInt32(first(params.cmin)), parseInt32(first(params.cmax)));
+  const [minTotal, maxTotal] = orderedRange(parseInt32(first(params.tmin)), parseInt32(first(params.tmax)));
+
   const filters: DBFilters = {
     operationTypes: parseList(first(params.op), OPERATION_TYPES),
     propertyTypes: parseList(first(params.tipo), PROPERTY_TYPES),
-    localities: first(params.loc)
-      ? first(params.loc)!.split(",").map((s) => s.trim()).filter(Boolean)
-      : undefined,
-    neighborhoods: first(params.bar)
-      ? first(params.bar)!.split(",").map((s) => s.trim()).filter(Boolean)
-      : undefined,
+    localities: parseText(first(params.loc)),
+    neighborhoods: parseText(first(params.bar)),
     currency,
-    minPrice: parseInt32(first(params.pmin)),
-    maxPrice: parseInt32(first(params.pmax)),
+    // ARS and USD amounts aren't comparable: a price range needs a currency.
+    minPrice: currency ? minPrice : undefined,
+    maxPrice: currency ? maxPrice : undefined,
     minRooms: parseInt32(first(params.amb)),
     minBedrooms: parseInt32(first(params.dorm)),
-    minAge: parseInt32(first(params.antmin)),
-    maxAge: parseInt32(first(params.antmax)),
-    minCoveredSurface: parseInt32(first(params.cmin)),
-    maxCoveredSurface: parseInt32(first(params.cmax)),
-    minTotalSurface: parseInt32(first(params.tmin)),
-    maxTotalSurface: parseInt32(first(params.tmax)),
+    minAge,
+    maxAge,
+    minCoveredSurface: minCovered,
+    maxCoveredSurface: maxCovered,
+    minTotalSurface: minTotal,
+    maxTotalSurface: maxTotal,
     q: first(params.q),
     orderBy,
     page: parseInt32(first(params.page)) || 1,
   };
+
+  const wantsRentals = filters.operationTypes?.includes("alquiler") ?? false;
 
   const [result, localities, neighborhoods] = await Promise.all([
     getProperties(filters),
@@ -122,16 +138,19 @@ export default async function PropiedadesPage({
             </div>
           </aside>
 
-          <main className="flex-1 min-w-0">
-            {/* Top bar */}
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+          <section className="flex-1 min-w-0" aria-labelledby="listado-titulo">
+            <h1 id="listado-titulo" className="sr-only">
+              Propiedades en venta y alquiler
+            </h1>
+            {/* Top bar — wraps on narrow phones instead of overflowing */}
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <Suspense>
                   <MobileFilters localities={localities} neighborhoods={neighborhoods} />
                 </Suspense>
-                <p className="text-sm text-ink/70">
+                <p className="text-sm text-ink/70 whitespace-nowrap">
                   <span className="font-semibold text-ink">{result.total}</span>{" "}
-                  Resultados de búsqueda
+                  {result.total === 1 ? "resultado" : "resultados"}
                 </p>
               </div>
               <Suspense>
@@ -156,12 +175,44 @@ export default async function PropiedadesPage({
                   <Search className="h-7 w-7 text-gray-400" />
                 </div>
                 <p className="text-xl font-medium text-ink">No se encontraron propiedades</p>
-                <p className="mt-2 text-sm text-ink/50 max-w-sm mx-auto">
-                  Intentá con otros filtros de búsqueda o explorá todas las propiedades disponibles.
-                </p>
+                {wantsRentals ? (
+                  <>
+                    <p className="mt-2 text-sm text-ink/70 max-w-sm mx-auto">
+                      Por ahora no tenemos alquileres publicados en la web, pero nuestro
+                      equipo de alquileres puede ayudarte con opciones disponibles.
+                    </p>
+                    <a
+                      href={buildWhatsAppUrl(
+                        RENTALS_WHATSAPP,
+                        "Hola UCCI Propiedades, estoy buscando una propiedad en alquiler."
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        buttonVariants(),
+                        "mt-6 bg-brand text-black hover:bg-brand-dark hover:text-white"
+                      )}
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Consultar alquileres por WhatsApp
+                    </a>
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-ink/70 max-w-sm mx-auto">
+                    Intentá con otros filtros de búsqueda o explorá todas las propiedades disponibles.
+                  </p>
+                )}
+                <div className="mt-4">
+                  <Link
+                    href="/propiedades"
+                    className="text-sm font-medium text-ink underline underline-offset-4 hover:text-brand-dark"
+                  >
+                    Ver todas las propiedades
+                  </Link>
+                </div>
               </div>
             )}
-          </main>
+          </section>
         </div>
       </div>
     </div>

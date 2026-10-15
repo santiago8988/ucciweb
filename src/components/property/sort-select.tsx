@@ -13,9 +13,9 @@ import {
 const DEFAULT = "recent";
 
 const SORT_LABELS: Record<string, string> = {
-  recent: "Última actualización",
-  price_asc: "Precio: menor a mayor",
-  price_desc: "Precio: mayor a menor",
+  recent: "Más recientes",
+  price_asc: "Menor precio",
+  price_desc: "Mayor precio",
 };
 
 export function SortSelect() {
@@ -37,8 +37,8 @@ export function SortSelect() {
 
   return (
     <Select value={current} onValueChange={onChange}>
-      <SelectTrigger className="h-9 min-w-52 text-sm">
-        <span className="text-ink/50 mr-2">Ordenar por:</span>
+      <SelectTrigger className="h-9 max-w-full text-sm" aria-label="Ordenar resultados">
+        <span className="hidden text-ink/60 mr-1 sm:inline">Ordenar por:</span>
         <SelectValue>{() => SORT_LABELS[current]}</SelectValue>
       </SelectTrigger>
       <SelectContent>
