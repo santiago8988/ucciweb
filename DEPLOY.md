@@ -6,7 +6,7 @@ Una sola instancia (Lightsail o EC2) en `sa-east-1`, en la misma región que la 
 Internet ──► Caddy :80/:443 (HTTPS automático, compresión, rate limit por IP)
                  │
                  ▼
-            web :3000 (Next.js standalone) ──► Supabase sa-east-1 (pooler :5432, rol web_readonly)
+            web :3000 (Next.js standalone) ──► Supabase sa-east-1 (transaction pooler :6543, rol web_readonly)
                  │
                  └─ volumen next_cache (páginas ISR + imágenes optimizadas)
 ```
@@ -21,10 +21,11 @@ Archivos involucrados: [Dockerfile](Dockerfile), [docker-compose.yml](docker-com
    - Abrí el SQL editor de Supabase, reemplazá la contraseña en [db/readonly-role.sql](db/readonly-role.sql) y ejecutalo.
    - Después ejecutá [db/readonly-policies.sql](db/readonly-policies.sql), reemplazando `<ORGANIZATION_ID>`. Las 4 tablas tienen RLS activo: sin estas políticas el sitio ve 0 propiedades.
    - Verificá desde el repo con `node db/verify-readonly.js` (solo lee).
-   - Armá la URL de conexión:
+   - Armá la URL de conexión con el **Transaction Pooler (puerto 6543)**:
      ```
-     postgresql://web_readonly.<project_ref>:<password>@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?connection_limit=5&pool_timeout=10
+     postgresql://web_readonly.<project_ref>:<password>@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=5&pool_timeout=10
      ```
+     No uses el Session Pooler (5432): admite como máximo 15 clientes para toda la base, compartidos con la app de agentes. Con ese pooler el build falló el 14/10 con `EMAXCONNSESSION max clients reached in session mode`. `pgbouncer=true` es obligatorio en modo transacción. En Vercel usá `connection_limit=1`.
 2. **Valores de configuración:**
    - `ORGANIZATION_ID`: el mismo de `.env.local`.
    - `NEXT_PUBLIC_SITE_URL`: el dominio final (por ejemplo `https://www.uccipropiedades.com`).
@@ -51,7 +52,7 @@ Archivos involucrados: [Dockerfile](Dockerfile), [docker-compose.yml](docker-com
 Construí en tu máquina o en CI (compilar en una instancia de 2 GB suele quedarse sin memoria) y pasá la imagen al servidor:
 
 ```bash
-printf '%s' 'postgresql://web_readonly.<ref>:<pass>@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?connection_limit=5&pool_timeout=10' > db_url.secret
+printf '%s' 'postgresql://web_readonly.<ref>:<pass>@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1' > db_url.secret
 ```
 
 ```bash

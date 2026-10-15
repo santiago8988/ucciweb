@@ -1,8 +1,10 @@
 -- Read-only database role for the public website (audit finding SEC-02).
 --
 -- Run ONCE in the Supabase SQL editor (as postgres), after replacing the password.
--- Then point the website's DATABASE_URL at this role through the pooler:
---   postgresql://web_readonly.<project_ref>:<password>@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?connection_limit=5&pool_timeout=10
+-- Then point the website's DATABASE_URL at this role through the TRANSACTION
+-- pooler (6543) — the session pooler (5432) is capped at 15 clients shared with
+-- the agents' app (see .env.example):
+--   postgresql://web_readonly.<project_ref>:<password>@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=5&pool_timeout=10
 --
 -- The website only reads published properties of one organization; it must not be
 -- able to read the consortium/financial tables or write anything.
