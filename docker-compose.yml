@@ -1,0 +1,35 @@
+# Single-instance deployment (AWS Lightsail/EC2, São Paulo). See DEPLOY.md.
+# Run with: docker compose --env-file .env.production up -d
+services:
+  web:
+    image: ucci-web:latest
+    restart: unless-stopped
+    env_file: .env.production
+    volumes:
+      # ISR pages + optimized images survive restarts/redeploys.
+      - next_cache:/app/.next/cache
+    expose:
+      - "3000"
+
+  caddy:
+    build: ./deploy/caddy
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    # Only what Caddy needs — the proxy never sees the database credentials.
+    environment:
+      DOMAIN: ${DOMAIN}
+      APEX_DOMAIN: ${APEX_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  next_cache:
+  caddy_data:
+  caddy_config:

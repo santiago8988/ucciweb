@@ -1,0 +1,37 @@
+# Reverse proxy in front of the Next.js container: automatic HTTPS (Let's
+# Encrypt), compression, per-IP rate limiting and unbuffered streaming.
+# Security headers (CSP, HSTS, etc.) are set by the app in next.config.ts.
+{
+	order rate_limit before reverse_proxy
+	email {$ACME_EMAIL}
+}
+
+# Apex → www (canonical host).
+{$APEX_DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# ~5 req/s sustained per IP for pages; generous for real visitors,
+	# blunt for scrapers/floods hitting uncached search URLs.
+	@pages not path /_next/static/*
+	rate_limit @pages {
+		zone per_ip {
+			key {remote_host}
+			events 300
+			window 1m
+		}
+	}
+
+	reverse_proxy web:3000 {
+		# Next.js streams HTML (loading states); don't buffer responses.
+		flush_interval -1
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

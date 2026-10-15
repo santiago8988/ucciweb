@@ -1,0 +1,15 @@
+.git
+.next
+node_modules
+src/generated
+.env*
+!.env.example
+.claude
+.vscode
+.idea
+auditoria
+design
+AUDITORIA_UCCI.md
+pedido.md
+foto_logo.png
+npm-debug.log*

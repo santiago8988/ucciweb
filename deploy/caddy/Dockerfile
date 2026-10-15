@@ -1,0 +1,7 @@
+# Caddy with the rate-limit plugin (not included in the official image).
+FROM caddy:2.10-builder AS builder
+RUN xcaddy build --with github.com/mholt/caddy-ratelimit
+
+FROM caddy:2.10
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+COPY Caddyfile /etc/caddy/Caddyfile
