@@ -36,7 +36,10 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   images: {
-    formats: ["image/avif", "image/webp"],
+    // WebP only: the server (2 vCPU) resizes ~3 MB phone photos on first
+    // request, and AVIF took ~2.8 s per photo vs ~0.6 s for WebP, with far more
+    // memory. Every current browser supports WebP.
+    formats: ["image/webp"],
     // Only our own storage and the stock photos used on static pages: an open
     // pattern turns the optimizer into a public image proxy.
     remotePatterns: [

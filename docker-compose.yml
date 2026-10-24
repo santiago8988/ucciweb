@@ -5,6 +5,10 @@ services:
     image: ucci-web:latest
     restart: unless-stopped
     env_file: .env.production
+    environment:
+      # sharp/libvips on glibc fragments memory across malloc arenas; capping
+      # them keeps the image optimizer from growing until the 2 GB box swaps.
+      MALLOC_ARENA_MAX: "2"
     volumes:
       # ISR pages + optimized images survive restarts/redeploys.
       - next_cache:/app/.next/cache

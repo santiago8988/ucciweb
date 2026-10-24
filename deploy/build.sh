@@ -24,3 +24,6 @@ docker build \
 docker compose --env-file .env.production up -d web
 docker image ls ucci-web
 echo "Deployed $tag"
+
+# Pre-generate photo variants in the background (log: /tmp/warm-images.log).
+nohup bash deploy/warm-images.sh >> /tmp/warm-images.log 2>&1 &
