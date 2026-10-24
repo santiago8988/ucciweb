@@ -14,13 +14,15 @@
 {$DOMAIN} {
 	encode zstd gzip
 
-	# ~5 req/s sustained per IP for pages; generous for real visitors,
-	# blunt for scrapers/floods hitting uncached search URLs.
-	@pages not path /_next/static/*
+	# Pages only: /_next/* (static files and optimized images) is
+	# served from cache and one page view triggers dozens of those requests.
+	# 10 page req/s per IP leaves room for visitors sharing an IP (mobile
+	# carriers' CGNAT, offices) and still blunts scrapers/floods.
+	@pages not path /_next/*
 	rate_limit @pages {
 		zone per_ip {
 			key {remote_host}
-			events 300
+			events 600
 			window 1m
 		}
 	}

@@ -38,18 +38,27 @@ Archivos involucrados: [Dockerfile](Dockerfile), [docker-compose.yml](docker-com
 1. En Lightsail, región **São Paulo**: instancia Linux con **Ubuntu 24.04**, plan de **2 GB de RAM** o más.
 2. Asignale una **IP estática**.
 3. En el firewall de la instancia, abrí los puertos **22** (solo desde tu IP), **80** y **443** (TCP), y **443 UDP** para HTTP/3.
-4. Conectate por SSH e instalá Docker:
+   La clave SSH por defecto de la región se crea junto con la primera instancia: se descarga desde la pestaña **Connect** de la instancia ("Download default key").
+4. Conectate por SSH, instalá Docker y agregá swap (con 2 GB de RAM el build de Next necesita swap):
    ```bash
    curl -fsSL https://get.docker.com | sudo sh
    sudo usermod -aG docker $USER   # cerrar y abrir la sesión SSH
+   sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
    ```
-5. Copiá el repo a la instancia: `git clone`, o solo `docker-compose.yml`, `deploy/` y `.env.example` si la imagen se construye en otro lado.
+5. Copiá el código a la instancia, en `~/ucci`. Desde tu máquina (sube solo lo commiteado):
+   ```bash
+   git archive --format=tar.gz -o ucci-src.tgz HEAD
+   ```
+   ```bash
+   scp -i ~/.ssh/ucci-lightsail.pem ucci-src.tgz ubuntu@<ip-estatica>:/tmp/ && ssh -i ~/.ssh/ucci-lightsail.pem ubuntu@<ip-estatica> 'mkdir -p ~/ucci && tar -xzf /tmp/ucci-src.tgz -C ~/ucci'
+   ```
 
 ## 3. Construir la imagen
 
 `next build` genera la home y el sitemap con datos de la base, así que **el build necesita `DATABASE_URL`**. Se pasa como *secreto* de BuildKit y no queda guardado en la imagen.
 
-Construí en tu máquina o en CI (compilar en una instancia de 2 GB suele quedarse sin memoria) y pasá la imagen al servidor:
+Se construye **en el servidor** (con el swap del paso 2 tarda ~2 minutos), dentro de `~/ucci`. La imagen usa Node 22: con Node 20, Turbopack falla al procesar `next/font/google` ("next/font/google queries have exactly one entry").
 
 ```bash
 printf '%s' 'postgresql://web_readonly.<ref>:<pass>@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1' > db_url.secret
@@ -63,7 +72,7 @@ docker build --platform linux/amd64 --secret id=database_url,src=db_url.secret -
 rm db_url.secret
 ```
 
-Pasar la imagen al servidor sin usar un registry:
+Alternativa si algún día se construye en otra máquina (sin registry):
 
 ```bash
 docker save ucci-web:latest | gzip | ssh ubuntu@<ip-estatica> 'gunzip | docker load'
@@ -102,8 +111,23 @@ Tiene que responder `200` con `content-security-policy` y `strict-transport-secu
 
 ## 6. Cambiar el DNS
 
-1. Registros **A** de `www.uccipropiedades.com` y `uccipropiedades.com` → IP estática. Bajá antes el TTL a 300 s.
-2. Caddy obtiene el certificado de Let's Encrypt solo, en el primer request.
+Así se hizo el 24/10/2026. El dominio está registrado en Route 53 de la cuenta de UCCI, y el DNS estaba en un Cloudflare sin acceso. Se pasó a una **zona DNS de Lightsail**, que es gratis.
+
+1. Lightsail → Domains & DNS → **Create DNS zone** → **"Use a domain from another registrar"** → `uccipropiedades.com`.
+   > **No** elijas "Use a domain that is registered with Amazon Route 53": con esa opción Lightsail cambia los nameservers del dominio **en el acto**, con la zona todavía vacía, y se cortan el sitio y el mail.
+2. Cargá los registros:
+   - **A** de `@` y `www` → IP estática.
+   - **MX** del mail (Google Workspace): `1 aspmx.l.google.com`, `5 alt1.aspmx.l.google.com`, `5 alt2.aspmx.l.google.com`, `10 alt3.aspmx.l.google.com` y `10 alt4.aspmx.l.google.com`.
+   - **TXT**: el SPF `v=spf1 include:_spf.google.com -all` y el `google-site-verification=…` de Search Console.
+3. Verificá preguntando directo a uno de los nameservers de la zona, antes del cambio: `nslookup -type=MX uccipropiedades.com ns-224.awsdns-28.com`.
+4. En la ficha del **dominio** (ícono 53) → **Edit name servers** → los 4 de la zona:
+   - `ns-1372.awsdns-43.org`
+   - `ns-1826.awsdns-36.co.uk`
+   - `ns-224.awsdns-28.com`
+   - `ns-783.awsdns-33.net`
+
+   Para volver atrás, se ponen de nuevo los de Cloudflare: `austin.ns.cloudflare.com` y `carrera.ns.cloudflare.com`.
+5. Levantá Caddy recién después del cambio (`docker compose --env-file .env.production up -d`). Si arranca antes, sus intentos de certificado fallan contra el DNS viejo. El 24/10 la delegación se vio en minutos y Caddy obtuvo los certificados en 5 segundos.
 3. El apex redirige a `www`, y las URLs del sitio actual (`/venta`, `/alquiler`, `/temporario`, `/sumate`, etc.) redirigen con 308 (ver `redirects()` en [next.config.ts](next.config.ts)).
 
 ## 7. Verificación post-deploy
@@ -116,6 +140,7 @@ Tiene que responder `200` con `content-security-policy` y `strict-transport-secu
 - **Search Console:** dar de alta el dominio y enviar `https://www.uccipropiedades.com/sitemap.xml`.
 - **WhatsApp:** pegar el link de una ficha en un chat y confirmar que aparece la vista previa con foto.
 - **Analytics:** en GA4 → Tiempo real, tocar WhatsApp en una ficha y ver el evento `whatsapp_click`.
+- **Límite de pedidos (Caddy):** 600 páginas por minuto por IP. Excluye `/_next/*` (estáticos e imágenes optimizadas), porque una sola vista dispara decenas de esos pedidos. Con el límite anterior (300, imágenes incluidas), los tests e2e recibían 429. Además, muchas conexiones móviles en Argentina comparten IP (CGNAT).
 - **Tests de solo lectura contra el sitio publicado:**
   ```bash
   E2E_BASE_URL=https://www.uccipropiedades.com npm run test:e2e
@@ -132,7 +157,8 @@ Hacen que los cambios de la app de agentes se vean al instante en el sitio. Sin 
 2. En Supabase → **Database → Webhooks** → *Create a new hook*, uno por cada tabla: `properties`, `property_images`, `property_videos` y `agents`.
    - Events: **Insert, Update, Delete**.
    - Type: **HTTP Request**, method **POST**.
-   - URL: `https://<dominio>/api/revalidate` (hoy `https://ucciweb.vercel.app/api/revalidate`; cambiarla al dominio final después del cambio de DNS).
+   - URL: `https://www.uccipropiedades.com/api/revalidate`.
+   - El secreto de producción ya está generado en el servidor; se ve con `grep REVALIDATE_SECRET ~/ucci/.env.production`.
    - HTTP Headers: `Authorization: Bearer <REVALIDATE_SECRET>` y `Content-Type: application/json`.
 3. Probalo editando una propiedad en la app de agentes: el cambio tiene que verse en el sitio con solo recargar.
 
@@ -143,25 +169,34 @@ Notas:
 ## 8. Actualizar y volver atrás
 
 **Nueva versión:**
-1. Construir y cargar la imagen (paso 3) con un tag nuevo, por ejemplo `ucci-web:2026-10-20`, y retaguearla como `latest`.
-2. En el servidor:
-   ```bash
-   docker compose --env-file .env.production up -d web
-   ```
+1. Commitear y subir el código al servidor (paso 2.5).
+2. En el servidor, `cd ~/ucci && bash deploy/build.sh`:
+   - construye con los valores de `.env.production`;
+   - etiqueta la imagen con fecha y hora (`ucci-web:AAAAMMDD-HHMM`) y además como `latest`;
+   - reinicia el contenedor del sitio, con un corte de 1 o 2 segundos.
 
-**Volver atrás:** retaguear la imagen anterior como `latest` y repetir el `up -d web`. Conviene conservar las últimas 2 o 3 imágenes (`docker image ls ucci-web`).
+   Si cambia la configuración de Caddy, además: `docker compose --env-file .env.production up -d --build caddy`.
+
+**Volver atrás:**
+
+```bash
+docker tag ucci-web:<tag-anterior> ucci-web:latest && docker compose --env-file .env.production up -d web
+```
+
+Conviene conservar las últimas 2 o 3 imágenes (`docker image ls ucci-web`) y borrar las viejas con `docker image rm`.
 
 **Caché:** las páginas ISR y las imágenes optimizadas viven en el volumen `next_cache` y sobreviven a los redeploys. Para vaciarlo:
 
 ```bash
-docker compose --env-file .env.production down && docker volume rm ucciweb_next_cache
+docker compose --env-file .env.production down && docker volume rm ucci_next_cache
 ```
 
 (el nombre del volumen depende de la carpeta; verificalo con `docker volume ls`).
 
 ## 9. Operación
 
-- **Backups:** snapshots automáticos de la instancia en Lightsail. La base vive en Supabase y tiene sus propios backups.
+- **Backups:** el servidor no guarda datos propios. Se reconstruye con este documento, el repo y `.env.production`. Guardá una copia de `.env.production` en un gestor de contraseñas. Un snapshot manual de la instancia después de cada cambio de configuración cuesta centavos. La base vive en Supabase y tiene sus propios backups.
+- **Acceso:** `ssh -i ~/.ssh/ucci-lightsail.pem ubuntu@54.207.116.159`. La clave es la default de Lightsail en São Paulo y se puede volver a descargar desde la consola.
 - **Monitoreo:** un chequeo de disponibilidad externo (por ejemplo UptimeRobot) sobre `/` y `/propiedades`.
 - **Staging en Vercel (si se mantiene):**
   - `NEXT_PUBLIC_SITE_URL` con la URL de staging;

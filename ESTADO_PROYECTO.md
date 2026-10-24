@@ -1,11 +1,17 @@
 # Estado del proyecto — para retomar
 
-> Última actualización: **14/10/2026** · rama `main` (CI en verde) · staging: https://ucciweb.vercel.app
+> Última actualización: **24/10/2026** · rama `main` · **producción: https://www.uccipropiedades.com (AWS Lightsail São Paulo)** · staging: https://ucciweb.vercel.app
 > Contexto completo: [AUDITORIA_UCCI.md](AUDITORIA_UCCI.md) (84 hallazgos con IDs, métricas antes/después, roadmap) · Deploy: [DEPLOY.md](DEPLOY.md) · Desarrollo y tests: [README.md](README.md)
 
 ## 1. Dónde estamos
 
 Se hizo una auditoría técnica completa y se implementaron los **quick wins**, el **bloque inmediato** y el **bloque de 1 mes** (salvo landings por búsqueda y Sentry, pospuestos a propósito). El estado por hallazgo está en la sección 4.9 de la auditoría.
+
+**El 24/10/2026 el sitio nuevo reemplazó al viejo en `www.uccipropiedades.com`:**
+- **Servidor:** Lightsail São Paulo `ucci-web`, 2 GB, USD 12 por mes, IP estática `54.207.116.159`, Docker + Caddy, certificados de Let's Encrypt a nombre de santiago.mdp@gmail.com.
+- **DNS:** pasó del Cloudflare sin acceso a una zona DNS de Lightsail.
+- **Verificación:** 39/39 tests e2e de solo lectura contra el dominio. HTML completo del listado en ~0,4 s (en Vercel tardaba ~1,9 s), lo que cierra PERF-08.
+- **Cómo operarlo:** acceso, actualización y vuelta atrás están en [DEPLOY.md](DEPLOY.md), secciones 8 y 9. Para actualizar: subir el código y correr `bash deploy/build.sh` en el servidor.
 
 Métricas en staging (Lighthouse mobile; detalle y metodología en la sección 3 de la auditoría):
 
@@ -22,10 +28,10 @@ Inventario publicado de UCCI al 14/10: **12 disponibles, 1 reservada, 7 vendidas
 
 | # | Qué | Dónde | Estado |
 |---|---|---|---|
-| 1 | `REVALIDATE_SECRET` (Sensitive, Production + Preview) y Redeploy | Vercel → Environment Variables | **Pendiente** |
-| 2 | 4 Database Webhooks (`properties`, `property_images`, `property_videos`, `agents`) → `POST https://ucciweb.vercel.app/api/revalidate` con `Authorization: Bearer <secreto>` | Supabase → Database → Webhooks ([DEPLOY.md](DEPLOY.md#webhooks-de-supabase)) | **Pendiente**. Después, probar juntos: editar una propiedad y ver el cambio al instante. Sin webhooks, la caché se renueva cada 5 min. |
-| 3 | `NEXT_PUBLIC_GA_ID` (`G-…`) y Redeploy | Vercel (crear la propiedad en analytics.google.com) | **Pendiente**. El código de eventos `whatsapp_click` / `call_click` ya está. |
-| 4 | Confirmar que `NEXT_PUBLIC_SITE_URL=https://ucciweb.vercel.app` está también en **Preview** | Vercel | Por confirmar |
+| 1 | 4 Database Webhooks (`properties`, `property_images`, `property_videos`, `agents`) → `POST https://www.uccipropiedades.com/api/revalidate` con `Authorization: Bearer <secreto>`. El secreto ya está en el servidor (`grep REVALIDATE_SECRET ~/ucci/.env.production`). | Supabase → Database → Webhooks ([DEPLOY.md](DEPLOY.md#webhooks-de-supabase)) | **Pendiente**. Después, probar juntos: editar una propiedad y ver el cambio al instante. Sin webhooks, la caché se renueva cada 5 min. |
+| 2 | **Search Console**: la verificación TXT del dominio se mantuvo. Enviar `https://www.uccipropiedades.com/sitemap.xml` y revisar en unas semanas las URLs viejas con 404 (fichas de Tokko) | search.google.com/search-console | **Pendiente** |
+| 3 | `NEXT_PUBLIC_GA_ID` (`G-…`): cargarlo en `.env.production` del servidor y correr `bash deploy/build.sh`, porque queda fijo en el build | analytics.google.com y el servidor | **Pendiente**. El código de eventos `whatsapp_click` / `call_click` ya está. |
+| 4 | Renovación automática del dominio (vence el 29/08/2027) y bloqueo de transferencia | Route 53 → Dominios registrados | Confirmar que quedaron activados |
 | 5 | Rotar la contraseña del usuario `postgres` (estuvo en Vercel y en `.env.local`) | Supabase | **Coordinar con la app de agentes**, que casi seguro usa ese usuario |
 | 6 | Validar el texto de [/privacidad](src/app/privacidad/page.tsx) con un asesor legal | — | Pendiente |
 
@@ -37,13 +43,14 @@ Ya hecho por el usuario:
 
 ## 3. Próximos pasos sugeridos (en orden)
 
-1. **Webhooks** (punto 2.2) y verificación conjunta de la actualización instantánea.
-2. **Deploy en AWS São Paulo** según [DEPLOY.md](DEPLOY.md):
-   - El `Dockerfile` y Caddy **todavía no se probaron**: hacer un primer `docker build` local (con Docker Desktop corriendo) antes del servidor real.
-   - Medir TTFB y el HTML completo en AWS. Cierra PERF-08: el listado hoy tarda ~1,9 s en Vercel porque las funciones corren en Washington y la base está en São Paulo.
-   - Cambio de DNS, Search Console y sitemap, y actualizar la URL de los 4 webhooks al dominio final.
-   - Correr `E2E_BASE_URL=https://www.uccipropiedades.com npm run test:e2e` contra el sitio nuevo.
-3. **Bloque de 3 meses** (sección 6 de la auditoría):
+1. **Webhooks** (punto 2.1) y verificación conjunta de la actualización instantánea.
+2. **Cierre del deploy en AWS:**
+   - Lighthouse mobile en el dominio nuevo, para comparar con la línea base.
+   - Snapshot manual de la instancia.
+   - Monitoreo de disponibilidad (por ejemplo UptimeRobot).
+   - Restringir el puerto 22 del firewall de Lightsail a tu IP.
+3. **Sitio viejo:** el bucket S3 está en una cuenta ajena; no hay nada que apagar de nuestro lado. Si aparece el dueño, pedirle que lo borre: permite listar archivos públicamente.
+4. **Bloque de 3 meses** (sección 6 de la auditoría):
    - cambios de modelo en la app de agentes (moneda por precio, amenities, barrios normalizados, slug, `isPublished` en `false` por defecto, fotos redimensionadas al subir);
    - índices compuestos (SQL en la sección 4.6 de la auditoría);
    - URLs con slug;
@@ -51,11 +58,18 @@ Ya hecho por el usuario:
    - formulario de contacto;
    - menos JS (PERF-09);
    - tokens de diseño.
-4. **Landings por búsqueda** cuando crezca el inventario.
-5. **Sentry**, si se crea una cuenta.
+5. **Landings por búsqueda** cuando crezca el inventario.
+6. **Sentry**, si se crea una cuenta.
 
 ## 4. Decisiones tomadas (no re-discutir sin motivo)
 
+- **Dominio y DNS (relevado el 24/10/2026):**
+  - El dominio `uccipropiedades.com` está registrado en **Route 53 de la cuenta AWS de UCCI** (desde 2012, vence el 29/08/2027). Sin DNSSEC.
+  - Los nameservers apuntan a un **Cloudflare al que nadie tiene acceso**.
+  - El sitio viejo (Gatsby) está en un bucket S3 `www.uccipropiedades.com` (us-east-1) de **otra cuenta de AWS**. El bucket permite listar sus archivos públicamente.
+  - **Decisión:** crear una zona alojada en Route 53 y cambiar los nameservers ahí. Antes hay que copiar los registros del mail (Google Workspace):
+    - MX: `1 aspmx.l.google.com`, `5 alt1/alt2.aspmx.l.google.com`, `10 alt3/alt4.aspmx.l.google.com`;
+    - TXT: SPF `v=spf1 include:_spf.google.com -all` y el `google-site-verification` de Search Console.
 - **Hosting final:** una instancia en AWS São Paulo (Lightsail/EC2) con Docker + Caddy, sin Amplify (soporta hasta Next 15 y no hace streaming) ni App Runner (cerrado a clientes nuevos). Vercel queda como staging.
 - **Base de datos:** el sitio solo usa el rol `web_readonly`, cuyo RLS limita la lectura a las propiedades publicadas de UCCI, a través del **Transaction Pooler `:6543` con `pgbouncer=true`**. En Vercel `connection_limit=1`; en AWS `5`.
 - **Estados:**
@@ -66,8 +80,9 @@ Ya hecho por el usuario:
 - **Landings por búsqueda:** pospuestas mientras haya poco inventario.
 - **Flujo de trabajo:**
   - verificar en local (build + tests contra una base de prueba);
-  - commit en `main` y push, que despliega en Vercel;
-  - verificar en producción.
+  - commit en `main` y push, que despliega **staging** en Vercel y corre CI;
+  - deploy a producción: copiar el código y correr `bash deploy/build.sh` en el servidor (DEPLOY.md, sección 8);
+  - verificar en producción con `E2E_BASE_URL=https://www.uccipropiedades.com`.
 
 ## 5. Cómo verificar
 
@@ -78,7 +93,7 @@ npm run typecheck && npm run lint
 Tests end-to-end contra el sitio publicado (solo lectura):
 
 ```bash
-E2E_BASE_URL=https://ucciweb.vercel.app PW_CHANNEL=chrome npm run test:e2e
+E2E_BASE_URL=https://www.uccipropiedades.com PW_CHANNEL=chrome npm run test:e2e
 ```
 
 Tests completos en local: necesitan un build hecho contra una base de prueba, **nunca** la real. La forma más simple replica CI:
@@ -108,6 +123,9 @@ node db/verify-readonly.js
   - la metadata va en el `<body>` para navegadores y Googlebot (es por diseño).
 - **El servidor `standalone` no lee `.env.local`:** hay que pasarle las variables, y copiar `public` y `.next/static`.
 - **Saltos de línea:** el working copy usa CRLF (`core.autocrlf=true`). Los scripts que editan archivos tienen que normalizar los saltos de línea.
+- **Node 22 en el Dockerfile:** con Node 20, Turbopack falla en `next/font/google` ("queries have exactly one entry"). Además, Node 20 ya no tiene soporte.
+- **Rate limit de Caddy:** con 300 pedidos por minuto, imágenes incluidas, los tests recibían 429. Ahora son 600 páginas por minuto por IP y `/_next/*` queda excluido. Hay que tener en cuenta el CGNAT de las conexiones móviles.
+- **Zona DNS de Lightsail:** crearla con "another registrar". La opción "registered with Route 53" cambia los nameservers en el acto.
 - **Lighthouse no puede bloquear lo que carga dentro de un iframe:** para medir terceros, mirar la traza de red.
 - **Arranques en frío en Vercel:** favoritos (server action) puede tardar varios segundos la primera vez; el test tiene 15 s de margen.
 - **Reglas de la auditoría** que siguen vigentes:
