@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -15,6 +15,23 @@ const ARROW_VISIBILITY =
   "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100";
 
 const SWIPE_THRESHOLD = 40;
+
+const MAIN_SIZES = "(max-width: 1024px) 100vw, 66vw";
+const BACKDROP_SIZES = "64px";
+const LIGHTBOX_SIZES = "(min-width: 1152px) 1152px, 100vw";
+
+// Fetches a photo in the background with the same srcset/sizes the gallery
+// renders, so the browser picks the same variant and caches it. The first
+// request for each variant is also what makes the server resize it (~0.6–1.3 s
+// cold), so warming the neighbors hides that wait when moving between photos.
+function warmImage(src: string, sizes: string) {
+  const { props } = getImageProps({ src, alt: "", fill: true, sizes });
+  const img = new window.Image();
+  img.decoding = "async";
+  if (props.sizes) img.sizes = props.sizes;
+  if (props.srcSet) img.srcset = props.srcSet;
+  img.src = props.src;
+}
 
 // Horizontal swipe with pointer events (touch, pen or mouse drag). The element
 // using it should allow vertical panning only (touch-action: pan-y) so the page
@@ -85,6 +102,24 @@ export function ImageGallery({ images }: { images: GalleryImage[] }) {
     return () => window.removeEventListener("keydown", handler);
   }, [lightboxOpen, next, prev]);
 
+  // Warm the previous and next photos once the current one has had a head start.
+  useEffect(() => {
+    if (total < 2) return;
+    const neighbors = new Set([(currentIndex + 1) % total, (currentIndex - 1 + total) % total]);
+    const id = window.setTimeout(() => {
+      for (const i of neighbors) {
+        const src = images[i].imageUrl;
+        if (lightboxOpen) {
+          warmImage(src, LIGHTBOX_SIZES);
+        } else {
+          warmImage(src, MAIN_SIZES);
+          warmImage(src, BACKDROP_SIZES);
+        }
+      }
+    }, 300);
+    return () => window.clearTimeout(id);
+  }, [currentIndex, lightboxOpen, images, total]);
+
   if (total === 0) {
     return (
       <div className="aspect-[16/9] rounded-2xl bg-stone/50 flex items-center justify-center">
@@ -119,7 +154,7 @@ export function ImageGallery({ images }: { images: GalleryImage[] }) {
               aria-hidden
               loading="eager"
               className="object-cover scale-110 blur-2xl opacity-60"
-              sizes="64px"
+              sizes={BACKDROP_SIZES}
             />
             {/* Actual image — full photo, no crop */}
             <Image
@@ -127,7 +162,7 @@ export function ImageGallery({ images }: { images: GalleryImage[] }) {
               alt={`Imagen ${currentIndex + 1}`}
               fill
               className="object-contain"
-              sizes="(max-width: 1024px) 100vw, 66vw"
+              sizes={MAIN_SIZES}
               loading="eager"
               fetchPriority="high"
               draggable={false}
@@ -238,7 +273,7 @@ export function ImageGallery({ images }: { images: GalleryImage[] }) {
                   alt={`Imagen ${currentIndex + 1}`}
                   fill
                   className="object-contain"
-                  sizes="(min-width: 1152px) 1152px, 100vw"
+                  sizes={LIGHTBOX_SIZES}
                   draggable={false}
                 />
               </motion.div>
