@@ -125,6 +125,10 @@ node db/verify-readonly.js
 - **Saltos de línea:** el working copy usa CRLF (`core.autocrlf=true`). Los scripts que editan archivos tienen que normalizar los saltos de línea.
 - **Node 22 en el Dockerfile:** con Node 20, Turbopack falla en `next/font/google` ("queries have exactly one entry"). Además, Node 20 ya no tiene soporte.
 - **Rate limit de Caddy:** con 300 pedidos por minuto, imágenes incluidas, los tests recibían 429. Ahora son 600 páginas por minuto por IP y `/_next/*` queda excluido. Hay que tener en cuenta el CGNAT de las conexiones móviles.
+- **Imágenes en el servidor de 2 GB:**
+  - Con AVIF, cada foto de ~3 MB tardaba ~2,8 s en convertirse y el proceso llegó a 1,1 GB, con el servidor usando swap (10 s para la primera foto).
+  - Ahora: solo WebP (~0,6 s), `MALLOC_ARENA_MAX=2`, precalentado de todas las variantes después de cada deploy y cada 30 minutos por cron (`deploy/warm-images.sh`), y precarga de la foto anterior y la siguiente en la galería.
+  - La solución de fondo es redimensionar las fotos al subirlas en la app de agentes (bloque de 3 meses).
 - **Zona DNS de Lightsail:** crearla con "another registrar". La opción "registered with Route 53" cambia los nameservers en el acto.
 - **Lighthouse no puede bloquear lo que carga dentro de un iframe:** para medir terceros, mirar la traza de red.
 - **Arranques en frío en Vercel:** favoritos (server action) puede tardar varios segundos la primera vez; el test tiene 15 s de margen.

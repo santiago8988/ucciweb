@@ -196,6 +196,10 @@ docker compose --env-file .env.production down && docker volume rm ucci_next_cac
 ## 9. Operación
 
 - **Backups:** el servidor no guarda datos propios. Se reconstruye con este documento, el repo y `.env.production`. Guardá una copia de `.env.production` en un gestor de contraseñas. Un snapshot manual de la instancia después de cada cambio de configuración cuesta centavos. La base vive en Supabase y tiene sus propios backups.
+- **Fotos precalentadas:** [deploy/warm-images.sh](deploy/warm-images.sh) genera de antemano las variantes WebP de cada foto publicada (64 a 1920 px). Corre después de cada deploy y cada 30 minutos por cron. Las fotos que suben los agentes pesan ~3 MB y la primera conversión tarda ~0,6 s por variante, así que el cron evita que un visitante espere en las fotos nuevas. Log en `/tmp/warm-images.log`. Si se rehace el servidor, hay que reinstalar el cron:
+  ```bash
+  (crontab -l 2>/dev/null; echo '*/30 * * * * bash $HOME/ucci/deploy/warm-images.sh >> /tmp/warm-images.log 2>&1') | crontab -
+  ```
 - **Acceso:** `ssh -i ~/.ssh/ucci-lightsail.pem ubuntu@54.207.116.159`. La clave es la default de Lightsail en São Paulo y se puede volver a descargar desde la consola.
 - **Monitoreo:** un chequeo de disponibilidad externo (por ejemplo UptimeRobot) sobre `/` y `/propiedades`.
 - **Staging en Vercel (si se mantiene):**
