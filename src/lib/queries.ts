@@ -153,7 +153,8 @@ export const getFeaturedProperties = unstable_cache(
     const rows = await prisma.property.findMany({
       where: { ...PUBLIC_WHERE, featured: true },
       select: CARD_SELECT,
-      take: 6,
+      // Shown in a carousel on the home, so more than one row is fine.
+      take: 12,
       orderBy: { createdAt: "desc" },
     });
     return rows.map(toCard);
