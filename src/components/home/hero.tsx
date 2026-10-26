@@ -23,6 +23,7 @@ import {
   buildWhatsAppUrl,
 } from "@/lib/constants";
 import heroImage from "@/assets/hero-playa-grande.jpg";
+import heroLogo from "@/assets/logo-ucci-hero.png";
 
 const TABS = [
   { value: "venta", label: "Comprar" },
@@ -77,10 +78,19 @@ export function Hero({
 
       <div className="relative z-10 content-wrap pt-24">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-light text-white sm:text-5xl leading-tight">
-            Propiedades en Mar del Plata
+          {/* The logo is the visible heading; the hidden text keeps the page's
+              topic in the H1 for search engines and screen readers. */}
+          <h1>
+            <Image
+              src={heroLogo}
+              alt="UCCI Propiedades"
+              sizes="(min-width: 640px) 448px, 288px"
+              className="mx-auto h-auto w-72 drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] sm:w-md"
+              preload
+            />
+            <span className="sr-only"> · Propiedades en Mar del Plata</span>
           </h1>
-          <p className="mt-3 text-base text-white/80 sm:text-lg">
+          <p className="mt-5 text-base text-white/80 sm:text-lg">
             Inmobiliaria familiar en Playa Grande desde 1970
             {propertyCount > 0 && ` · ${propertyCount} propiedades disponibles`}
           </p>

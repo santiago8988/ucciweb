@@ -98,9 +98,10 @@ export const CONTACT_DEPARTMENTS: ContactDepartment[] = [
     id: "alquileres",
     name: "Alquileres permanentes",
     description: "Contratos anuales, profesionales y comerciales.",
+    // First WhatsApp = RENTALS_WHATSAPP (home "Alquilar" tab, empty rentals search).
     channels: [
-      { kind: "whatsapp", display: "+54 9 223 681 2928", waNumber: "5492236812928" },
       { kind: "whatsapp", display: "+54 9 223 537 5248", waNumber: "5492235375248" },
+      { kind: "whatsapp", display: "+54 9 223 681 2928", waNumber: "5492236812928" },
       { kind: "phone", display: "223 451-2205", tel: "+542234512205" },
     ],
   },
