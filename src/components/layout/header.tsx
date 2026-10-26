@@ -147,7 +147,7 @@ export function Header() {
           </SheetTrigger>
           <SheetContent
             side="right"
-            className="flex w-[86vw] max-w-sm flex-col bg-ink p-0 text-white border-l-0"
+            className="flex w-[86vw] max-w-sm flex-col bg-ink p-0 text-white data-[side=right]:border-l-0"
           >
             <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
 

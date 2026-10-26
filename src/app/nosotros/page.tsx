@@ -65,12 +65,14 @@ export default function NosotrosPage() {
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.4)_100%)]" />
 
         <div className="content-wrap relative z-10">
-          <div className="max-w-3xl">
+          <div className="@container">
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-white mb-5">
               U C C I &nbsp; P R O P I E D A D E S
             </p>
-            <h1 className="text-4xl font-light text-white sm:text-5xl lg:text-6xl leading-tight">
-              donde la experiencia se ejerce con vocación
+            {/* One line at every width: the size follows the container width
+                (the phrase is ~17.7em wide), up to 3.75rem. */}
+            <h1 className="whitespace-nowrap font-light leading-tight text-white text-[length:min(3.75rem,calc(100cqw/18))]">
+              Donde la experiencia se ejerce con vocación
             </h1>
           </div>
         </div>
@@ -85,7 +87,8 @@ export default function NosotrosPage() {
               <p className="text-sm font-semibold uppercase tracking-widest text-brand-dark mb-3">
                 Nosotros
               </p>
-              <h2 className="title-h2 mb-10">
+              {/* Slightly smaller on phones so it takes 2 lines, not 3 with "1970" alone */}
+              <h2 className="title-h2 mb-10 max-sm:text-[27pt] max-sm:tracking-[0.02em]">
                 Una inmobiliaria familiar desde 1970
               </h2>
               <div className="space-y-5 text-ink/80 leading-relaxed text-base">

@@ -63,18 +63,34 @@ export default function ContactoPage() {
               href={OFFICE.mapsUrl}
               external
             />
-            <InfoCard
-              icon={Phone}
-              title="Teléfono"
-              primary={OFFICE.whatsapp.display}
-              secondary="Lunes a viernes, 9 a 18hs"
-              href={buildTelUrl(OFFICE.whatsapp.tel)}
-            />
+            {/* Same line for calls and WhatsApp chat: two actions, not one link */}
+            <InfoCard icon={Phone} title="Teléfono" primary={OFFICE.whatsapp.display}>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a
+                  href={buildTelUrl(OFFICE.whatsapp.tel)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-ink/10 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-sand-soft hover:border-ink/20"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                  Llamar
+                </a>
+                <a
+                  href={buildWhatsAppUrl(
+                    OFFICE.whatsapp.waNumber,
+                    "Hola UCCI Propiedades, quería hacer una consulta."
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-brand-dark hover:text-white"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  WhatsApp
+                </a>
+              </div>
+            </InfoCard>
             <InfoCard
               icon={Mail}
               title="Email"
               primary={OFFICE.email}
-              secondary="Respuesta en menos de 24hs"
               href={`mailto:${OFFICE.email}`}
             />
             <InfoCard
@@ -118,27 +134,11 @@ export default function ContactoPage() {
                 </p>
 
                 <div className="mt-6 flex flex-col gap-2">
+                  {/* WhatsApp lines only: the landline isn't listed on this page */}
                   {dept.channels.map((channel, i) =>
-                    channel.kind === "phone" ? (
+                    channel.kind !== "whatsapp" ? null : (
                       <a
-                        key={`${dept.id}-p-${i}`}
-                        href={buildTelUrl(channel.tel)}
-                        className="group flex items-center gap-3 rounded-xl border border-ink/10 bg-sand-soft/40 px-4 py-3 text-sm font-medium text-ink transition-colors hover:bg-sand-soft hover:border-ink/20"
-                      >
-                        <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-ink border border-ink/10">
-                          <Phone className="h-4 w-4" />
-                        </span>
-                        <span className="flex-1">
-                          <span className="block text-[10px] uppercase tracking-widest text-ink/50">
-                            Teléfono
-                          </span>
-                          {channel.display}
-                        </span>
-                        <ArrowUpRight className="h-4 w-4 text-ink/40 group-hover:text-ink transition-colors" />
-                      </a>
-                    ) : (
-                      <a
-                        key={`${dept.id}-w-${i}`}
+                        key={`${dept.id}-${i}`}
                         href={buildWhatsAppUrl(
                           channel.waNumber,
                           `Hola UCCI Propiedades, consulto por ${dept.name.toLowerCase()}.`
@@ -215,13 +215,16 @@ function InfoCard({
   secondary,
   href,
   external = false,
+  children,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   primary: string;
-  secondary: string;
+  secondary?: string;
   href?: string;
   external?: boolean;
+  /** Actions inside the card (then the card itself isn't a link). */
+  children?: React.ReactNode;
 }) {
   const body = (
     <div className="rounded-2xl bg-white p-6 shadow-lg border border-ink/5 h-full transition-all hover:-translate-y-0.5 hover:shadow-xl">
@@ -232,11 +235,12 @@ function InfoCard({
         {title}
       </h3>
       <p className="mt-1 font-medium text-ink">{primary}</p>
-      <p className="mt-1 text-xs text-ink/50">{secondary}</p>
+      {secondary && <p className="mt-1 text-xs text-ink/50">{secondary}</p>}
+      {children}
     </div>
   );
 
-  if (!href) return body;
+  if (!href || children) return body;
 
   if (external) {
     return (

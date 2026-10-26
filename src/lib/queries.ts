@@ -52,13 +52,6 @@ const PUBLIC_WHERE = {
   status: { in: [...LISTED_STATUSES] },
 } satisfies Prisma.PropertyWhereInput;
 
-// Strictly available, for copy that says "disponibles".
-const AVAILABLE_WHERE = {
-  organizationId: ORGANIZATION_ID,
-  isPublished: true,
-  status: "disponible",
-} satisfies Prisma.PropertyWhereInput;
-
 const INCLUDE_PROPERTY = {
   images: { orderBy: { order: "asc" as const } },
   videos: { orderBy: { order: "asc" as const } },
@@ -450,12 +443,6 @@ export async function getPropertiesByIds(ids: string[]): Promise<PropertyCardDat
   });
   return rows.map(toCard);
 }
-
-export const getPropertyCount = unstable_cache(
-  async () => prisma.property.count({ where: AVAILABLE_WHERE }),
-  ["available-count"],
-  CACHE
-);
 
 export const getRentalCount = unstable_cache(
   async () =>

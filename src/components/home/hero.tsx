@@ -37,13 +37,7 @@ const HERO_TYPE_LABELS: Record<string, string> = {
   ...PROPERTY_TYPE_LABELS,
 };
 
-export function Hero({
-  propertyCount,
-  rentalCount,
-}: {
-  propertyCount: number;
-  rentalCount: number;
-}) {
+export function Hero({ rentalCount }: { rentalCount: number }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("venta");
   const [propertyType, setPropertyType] = useState<string>(ALL_TYPES);
@@ -92,7 +86,6 @@ export function Hero({
           </h1>
           <p className="mt-5 text-base text-white/80 sm:text-lg">
             Inmobiliaria familiar en Playa Grande desde 1970
-            {propertyCount > 0 && ` · ${propertyCount} propiedades disponibles`}
           </p>
         </div>
 
