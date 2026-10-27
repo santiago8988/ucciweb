@@ -31,7 +31,7 @@ export function Footer() {
               />
             </Link>
             <p className="text-sm leading-relaxed text-ink">
-              Más de 60 años acompañando a los marplatenses en la búsqueda de su
+              Desde 1969 acompañando a nuestros clientes en la búsqueda de su
               próximo hogar o inversión.
             </p>
             <div className="mt-5 flex items-center gap-2">

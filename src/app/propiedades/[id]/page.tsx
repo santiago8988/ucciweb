@@ -144,7 +144,6 @@ export default async function PropertyDetailPage({ params }: PageProps) {
       ? CONTACT_DEPARTMENTS.find((d) => d.id === "compra-venta")
       : CONTACT_DEPARTMENTS.find((d) => d.id === "alquileres");
   const waChannel = defaultDept?.channels.find((c) => c.kind === "whatsapp");
-  const telChannel = defaultDept?.channels.find((c) => c.kind === "phone");
   const pageUrl = `${SITE_URL}/propiedades/${property.id}`;
   // The link lets the agent open the exact listing from the chat.
   const waMessage = `Hola UCCI Propiedades, me interesa la propiedad "${property.title}"${
@@ -167,14 +166,15 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   });
 
   // Always use the agent's celular for both WhatsApp and call when available.
-  // Fall back: agent.phone, then department channels.
+  // Fall back: agent.phone, then the department's WhatsApp mobile for both
+  // (the office landline isn't shown on listings).
   const agentNumber = property.agent?.mobilePhone || property.agent?.phone || null;
   const contactWaNumber =
     agentNumber || (waChannel?.kind === "whatsapp" ? waChannel.waNumber : null);
   const contactWaDisplay = agentNumber || waChannel?.display || null;
   const contactTelNumber =
-    agentNumber || (telChannel?.kind === "phone" ? telChannel.tel : null);
-  const contactTelDisplay = agentNumber || telChannel?.display || null;
+    agentNumber || (waChannel?.kind === "whatsapp" ? `+${waChannel.waNumber}` : null);
+  const contactTelDisplay = contactWaDisplay;
 
   const features = [
     { icon: Bed, label: "Dormitorios", value: property.bedrooms },

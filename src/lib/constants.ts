@@ -93,7 +93,18 @@ export type ContactDepartment = {
   channels: ContactChannel[];
 };
 
+// Order = order of the cards on /contacto.
 export const CONTACT_DEPARTMENTS: ContactDepartment[] = [
+  {
+    id: "compra-venta",
+    name: "Compra / Venta / Tasaciones",
+    description: "Operaciones de compraventa, tasaciones y asesoramiento.",
+    channels: [
+      { kind: "whatsapp", display: "+54 9 223 681 2928", waNumber: "5492236812928" },
+      { kind: "whatsapp", display: "+54 9 223 537 5248", waNumber: "5492235375248" },
+      { kind: "phone", display: "223 451-2205", tel: "+542234512205" },
+    ],
+  },
   {
     id: "alquileres",
     name: "Alquileres permanentes",
@@ -111,16 +122,6 @@ export const CONTACT_DEPARTMENTS: ContactDepartment[] = [
     description: "Temporada de verano, fines de semana y estadías breves.",
     channels: [
       { kind: "whatsapp", display: "+54 9 223 538 2653", waNumber: "5492235382653" },
-      { kind: "phone", display: "223 451-2205", tel: "+542234512205" },
-    ],
-  },
-  {
-    id: "compra-venta",
-    name: "Compra / Venta / Tasaciones",
-    description: "Operaciones de compraventa, tasaciones y asesoramiento.",
-    channels: [
-      { kind: "whatsapp", display: "+54 9 223 681 2928", waNumber: "5492236812928" },
-      { kind: "whatsapp", display: "+54 9 223 537 5248", waNumber: "5492235375248" },
       { kind: "phone", display: "223 451-2205", tel: "+542234512205" },
     ],
   },

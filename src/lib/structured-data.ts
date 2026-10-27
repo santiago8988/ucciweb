@@ -15,7 +15,7 @@ export function agencyJsonLd(logoPath: string) {
     image: absolute("/og-default.jpg"),
     telephone: OFFICE.mainPhone.tel,
     email: OFFICE.email,
-    foundingDate: "1970",
+    foundingDate: "1969",
     address: {
       "@type": "PostalAddress",
       streetAddress: OFFICE.address,

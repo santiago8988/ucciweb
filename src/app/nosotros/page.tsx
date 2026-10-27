@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/nosotros" },
   title: "Nosotros",
   description:
-    "Conocé a UCCI Propiedades. Inmobiliaria familiar en Playa Grande, Mar del Plata, desde 1970.",
+    "Conocé a UCCI Propiedades. Inmobiliaria familiar en Playa Grande, Mar del Plata, desde 1969.",
 };
 
 const PILARES = [
@@ -87,14 +87,14 @@ export default function NosotrosPage() {
               <p className="text-sm font-semibold uppercase tracking-widest text-brand-dark mb-3">
                 Nosotros
               </p>
-              {/* Slightly smaller on phones so it takes 2 lines, not 3 with "1970" alone */}
+              {/* Slightly smaller on phones so it takes 2 lines, not 3 with "1969" alone */}
               <h2 className="title-h2 mb-10 max-sm:text-[27pt] max-sm:tracking-[0.02em]">
-                Una inmobiliaria familiar desde 1970
+                Una inmobiliaria familiar desde 1969
               </h2>
               <div className="space-y-5 text-ink/80 leading-relaxed text-base">
                 <p>
                   Ucci Propiedades es una inmobiliaria familiar, situada en Playa Grande, Mar
-                  del Plata, desde 1970. Su fundador Atilio Ucci (padre) ha dejado un legado
+                  del Plata, desde 1969. Su fundador Atilio Ucci (padre) ha dejado un legado
                   claro: la palabra vale tanto como cualquier contrato. Sumado a muchas
                   historias sobre el crecimiento del barrio y su transformación.
                 </p>

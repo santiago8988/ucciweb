@@ -85,7 +85,7 @@ export function Hero({ rentalCount }: { rentalCount: number }) {
             <span className="sr-only"> · Propiedades en Mar del Plata</span>
           </h1>
           <p className="mt-5 text-base text-white/80 sm:text-lg">
-            Inmobiliaria familiar en Playa Grande desde 1970
+            Inmobiliaria familiar en Playa Grande desde 1969
           </p>
         </div>
 
