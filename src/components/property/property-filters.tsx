@@ -43,12 +43,9 @@ const OPERATION_OPTIONS = [
   { value: "alquiler", label: "Alquiler" },
 ] as const;
 
-// Without a currency the price range is ignored (ARS and USD amounts aren't comparable).
-const CURRENCY_OPTIONS = [
-  { value: null, label: "Cualquiera" },
-  { value: "ARS", label: "ARS" },
-  { value: "USD", label: "USD" },
-] as const;
+// Unit of the price range; it only filters once a price is typed. Defaults to
+// USD (how sales are listed in Mar del Plata), ARS when browsing rentals.
+const CURRENCY_OPTIONS = ["USD", "ARS"] as const;
 
 const TYPE_OPTIONS = PROPERTY_TYPES.map((value) => ({
   value,
@@ -98,7 +95,8 @@ export function PropertyFilters({
   const tipos = parseList(optimisticParams.get(PARAM.tipo));
   const locs = parseList(optimisticParams.get(PARAM.loc));
   const bars = parseList(optimisticParams.get(PARAM.bar));
-  const currency = optimisticParams.get(PARAM.mon);
+  const monParam = optimisticParams.get(PARAM.mon);
+  const currency = monParam === "USD" || monParam === "ARS" ? monParam : op === "alquiler" ? "ARS" : "USD";
   const amb = optimisticParams.get(PARAM.amb);
   const dorm = optimisticParams.get(PARAM.dorm);
 
@@ -237,42 +235,43 @@ export function PropertyFilters({
         <div className="flex items-center gap-1 mb-3" role="group" aria-label="Moneda">
           {CURRENCY_OPTIONS.map((cur) => (
             <button
-              key={cur.label}
+              key={cur}
               type="button"
-              aria-pressed={currency === cur.value}
-              onClick={() =>
+              aria-pressed={currency === cur}
+              onClick={() => {
+                if (currency === cur) return;
+                // Amounts don't carry over between currencies.
                 commit((params) => {
-                  if (cur.value) params.set(PARAM.mon, cur.value);
-                  else {
-                    params.delete(PARAM.mon);
-                    params.delete(PARAM.pmin);
-                    params.delete(PARAM.pmax);
-                  }
-                })
-              }
+                  params.set(PARAM.mon, cur);
+                  params.delete(PARAM.pmin);
+                  params.delete(PARAM.pmax);
+                });
+              }}
               className={cn(
                 "flex-1 rounded-md border px-2 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors",
-                currency === cur.value
+                currency === cur
                   ? "border-brand bg-brand text-black"
                   : "border-ink/15 bg-white text-ink/70 hover:border-ink/30"
               )}
             >
-              {cur.label}
+              {cur}
             </button>
           ))}
         </div>
-        {currency ? (
-          <DebouncedRange
-            minKey={PARAM.pmin}
-            maxKey={PARAM.pmax}
-            placeholderMin={`Desde ${currency}`}
-            placeholderMax={`Hasta ${currency}`}
-            label="Precio"
-            commit={commit}
-          />
-        ) : (
-          <p className="text-xs text-ink/70">Elegí la moneda para filtrar por precio.</p>
-        )}
+        <DebouncedRange
+          minKey={PARAM.pmin}
+          maxKey={PARAM.pmax}
+          placeholderMin={`Desde ${currency}`}
+          placeholderMax={`Hasta ${currency}`}
+          label="Precio"
+          // A typed price needs its unit in the URL, even if it's the default.
+          commit={(mutate) =>
+            commit((params) => {
+              mutate(params);
+              if (params.get(PARAM.pmin) || params.get(PARAM.pmax)) params.set(PARAM.mon, currency);
+            })
+          }
+        />
       </FilterSection>
 
       {/* Ambientes */}

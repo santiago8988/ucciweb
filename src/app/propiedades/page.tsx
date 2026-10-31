@@ -131,8 +131,10 @@ export default async function PropiedadesPage({
     propertyTypes: parseList(first(params.tipo), PROPERTY_TYPES),
     localities: parseText(first(params.loc)),
     neighborhoods: parseText(first(params.bar)),
-    currency,
-    // ARS and USD amounts aren't comparable: a price range needs a currency.
+    // The currency is the unit of the price range: it only filters when a price
+    // is set, so the filters' default (USD) doesn't hide ARS listings. ARS and
+    // USD amounts aren't comparable, so a range without a currency is ignored.
+    currency: minPrice != null || maxPrice != null ? currency : undefined,
     minPrice: currency ? minPrice : undefined,
     maxPrice: currency ? maxPrice : undefined,
     minRooms: parseInt32(first(params.amb)),
